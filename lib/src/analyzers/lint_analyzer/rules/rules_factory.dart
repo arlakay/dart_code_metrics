@@ -1,3 +1,7 @@
+// Koyal - added content
+import 'koyal_rules/koyal_rules_factory.dart' as koyal_rules;
+// end of Koyal content
+
 import 'models/rule.dart';
 import 'rules_list/always_remove_listener/always_remove_listener.dart';
 import 'rules_list/avoid_late_keyword/avoid_late_keyword.dart';
@@ -25,6 +29,7 @@ import 'rules_list/prefer_intl_name/prefer_intl_name.dart';
 import 'rules_list/prefer_on_push_cd_strategy/prefer_on_push_cd_strategy.dart';
 import 'rules_list/prefer_trailing_comma/prefer_trailing_comma.dart';
 import 'rules_list/provide_correct_intl_args/provide_correct_intl_args.dart';
+
 
 final _implementedRules = <String, Rule Function(Map<String, Object>)>{
   AlwaysRemoveListenerRule.ruleId: (config) => AlwaysRemoveListenerRule(config),
@@ -67,7 +72,10 @@ final _implementedRules = <String, Rule Function(Map<String, Object>)>{
   PreferTrailingCommaRule.ruleId: (config) => PreferTrailingCommaRule(config),
   ProvideCorrectIntlArgsRule.ruleId: (config) =>
       ProvideCorrectIntlArgsRule(config),
-};
+}
+// Koyal - added content
+  ..addAll(koyal_rules.rules);
+// end of Koyal content
 
 Iterable<Rule> get allRules =>
     _implementedRules.keys.map((id) => _implementedRules[id]!({}));

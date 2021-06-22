@@ -38,6 +38,5 @@ Reporter? reporter({
   required String reportFolder,
 }) {
   final constructor = _implementedReports[name];
-
   return constructor != null ? constructor(output, config, reportFolder) : null;
 }
