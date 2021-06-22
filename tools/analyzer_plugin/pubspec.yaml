@@ -9,5 +9,5 @@ environment:
 dependencies:
   dart_code_metrics:
     git:
-      url: https://dev.azure.com/hci-iap/koyal/_git/koyal-analyzer
+      url: https://dev.azure.com/hci-iap/koyal/_git/dart-code-metrics
       ref: main
