@@ -34,6 +34,7 @@ void main() {
         'always-remove-listener': <String, Object>{},
         'avoid-wrapping-in-padding': <String, Object>{},
         'prefer-extracting-callbacks': <String, Object>{},
+        'koyal-text': <String, Object>{},
       }).map((rule) => rule.id),
       equals([
         'always-remove-listener',
@@ -62,6 +63,7 @@ void main() {
         'prefer-on-push-cd-strategy',
         'prefer-trailing-comma',
         'provide-correct-intl-args',
+        'koyal-text'
       ]),
     );
   });

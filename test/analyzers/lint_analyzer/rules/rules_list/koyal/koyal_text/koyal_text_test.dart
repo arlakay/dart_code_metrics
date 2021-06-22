@@ -3,10 +3,9 @@ import 'package:dart_code_metrics/src/analyzers/lint_analyzer/models/severity.da
 import 'package:dart_code_metrics/src/analyzers/lint_analyzer/rules/koyal_rules/koyal_text_rule.dart';
 import 'package:test/test.dart';
 
-import '../../../../../helpers/rule_test_helper.dart';
+import '../../../../../../helpers/rule_test_helper.dart';
 
-
-const _examplePath = 'koyal_text/examples/example.dart';
+const _examplePath = 'koyal/koyal_text/examples/example.dart';
 
 void main() {
   group('KoyalText', () {
@@ -27,14 +26,16 @@ void main() {
 
       RuleTestHelper.verifyIssues(
         issues: issues,
-        startOffsets: [103],
-        startLines: [4],
-        startColumns: [12],
-        endOffsets: [116],
+        startOffsets: [96, 120],
+        startLines: [4, 5],
+        startColumns: [5, 12],
+        endOffsets: [107, 133],
         locationTexts: [
+          "Text('abc')",
           "Text('Lorem')",
         ],
         messages: [
+          'KoyalText should be used instead of Text.',
           'KoyalText should be used instead of Text.',
         ],
       );
