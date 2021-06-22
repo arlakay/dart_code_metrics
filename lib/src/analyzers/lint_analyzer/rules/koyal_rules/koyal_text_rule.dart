@@ -51,14 +51,14 @@ class KoyalTextRule extends Rule {
 }
 
 class _Visitor extends RecursiveAstVisitor<void> {
-  final _constructorNames = <ConstructorName>[];
+  final _constructorNames = <MethodInvocation>[];
 
-  Iterable<ConstructorName> get constructorNames => _constructorNames;
+  Iterable<MethodInvocation> get constructorNames => _constructorNames;
 
   @override
-  void visitConstructorName(ConstructorName constructorName) {
-    super.visitConstructorName(constructorName);
-    if (constructorName.name?.name == 'Text') {
+  void visitMethodInvocation(MethodInvocation constructorName) {
+    super.visitMethodInvocation(constructorName);
+    if (constructorName.methodName.name == 'Text') {
       _constructorNames.add(constructorName);
     }
   }
