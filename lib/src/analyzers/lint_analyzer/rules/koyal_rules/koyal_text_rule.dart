@@ -37,7 +37,6 @@ class KoyalTextRule extends Rule {
             location: nodeLocation(
               node: constructorName,
               source: source,
-              withCommentOrMetadata: true,
             ),
             message: _failure,
             replacement: const Replacement(

@@ -56,7 +56,7 @@ final _implementedRules = <String, Rule Function(Map<String, Object>)>{
   NewlineBeforeReturnRule.ruleId: (config) => NewlineBeforeReturnRule(config),
   NoBooleanLiteralCompareRule.ruleId: (config) =>
       NoBooleanLiteralCompareRule(config),
-  NoEmptyBlockRule.ruleId: (config) => NoEmptyBlockRule(config),
+  // NoEmptyBlockRule.ruleId: (config) => NoEmptyBlockRule(config),
   NoEqualArgumentsRule.ruleId: (config) => NoEqualArgumentsRule(config),
   NoEqualThenElseRule.ruleId: (config) => NoEqualThenElseRule(config),
   NoMagicNumberRule.ruleId: (config) => NoMagicNumberRule(config),
