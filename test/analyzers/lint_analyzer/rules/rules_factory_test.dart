@@ -63,7 +63,7 @@ void main() {
         'prefer-on-push-cd-strategy',
         'prefer-trailing-comma',
         'provide-correct-intl-args',
-        'koyal-text'
+        'koyal-text',
       ]),
     );
   });
