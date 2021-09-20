@@ -12,17 +12,18 @@ import '../../rule_utils.dart';
 
 part 'visitor.dart';
 
-class KoyalTextRule extends Rule {
-  static const String ruleId = 'koyal-text';
+class NoNativeButtonsRule extends Rule {
+  static const String ruleId = 'no-native-buttons';
 
-  static const _failure = 'KoyalText should be used instead of Text.';
+  static const _failure =
+      'Primary/Secondary/TertiaryButton widget has be used instead of native button.';
 
-  KoyalTextRule([Map<String, Object> config = const {}])
+  NoNativeButtonsRule([Map<String, Object> config = const {}])
       : super(
           id: ruleId,
           documentation: const RuleDocumentation(
-            name: 'Koyal Text',
-            brief: 'Checks that there is no constructor of native Text.',
+            name: 'No Native Buttons',
+            brief: 'No native flutter button widgets are allowed.',
           ),
           severity: readSeverity(config, Severity.error),
           excludes: readExcludes(config),
@@ -45,19 +46,12 @@ class KoyalTextRule extends Rule {
   }
 }
 
-// ignore: long-method
 Replacement koyalTextReplacement(InstanceCreationExpression textExpression) {
-  const replacementComment = 'Use KoyalText';
-  const constructorName = 'TODO';
-
+  const replacementComment =
+      'Use Primary/Secondary/TertiaryButton with Horizontal or Vertical layout.';
   final args = textExpression.argumentList.arguments;
-  final textArgument = args.first;
-
   Expression? keyExp;
-  Expression? maxLinesExp;
-  Expression? textAlignExp;
-  Expression? softWrapExp;
-  Expression? overflowExp;
+  Expression? onPressedExp;
 
   for (final expression in args) {
     if (expression is NamedExpression) {
@@ -65,44 +59,20 @@ Replacement koyalTextReplacement(InstanceCreationExpression textExpression) {
         case 'key':
           keyExp = expression.expression;
           break;
-        case 'maxLines':
-          maxLinesExp = expression.expression;
-          break;
-        case 'textAlign':
-          textAlignExp = expression.expression;
-          break;
-        case 'softWrap':
-          softWrapExp = expression.expression;
-          break;
-        case 'overflow':
-          overflowExp = expression.expression;
+        case 'onPressed':
+          onPressedExp = expression.expression;
           break;
       }
     }
   }
 
-  var replacementText = 'KoyalText.$constructorName($textArgument';
-
+  var replacementText = 'PrimaryButton(';
   if (keyExp != null) {
-    replacementText += ', key: ${keyExp.toSource()}';
+    replacementText += 'key: ${keyExp.toSource()}';
   }
-
-  if (maxLinesExp != null) {
-    replacementText += ', maxLines: ${maxLinesExp.toSource()}';
+  if (onPressedExp != null) {
+    replacementText += ', onPressed: ${onPressedExp.toSource()}';
   }
-
-  if (textAlignExp != null) {
-    replacementText += ', textAlign: ${textAlignExp.toSource()}';
-  }
-
-  if (softWrapExp != null) {
-    replacementText += ', softWrap: ${softWrapExp.toSource()}';
-  }
-
-  if (overflowExp != null) {
-    replacementText += ', overflow: ${overflowExp.toSource()}';
-  }
-
   replacementText += ',)';
 
   return Replacement(

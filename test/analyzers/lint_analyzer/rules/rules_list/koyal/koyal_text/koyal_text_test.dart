@@ -16,7 +16,7 @@ void main() {
       RuleTestHelper.verifyInitialization(
         issues: issues,
         ruleId: 'koyal-text',
-        severity: Severity.style,
+        severity: Severity.error,
       );
     });
 
