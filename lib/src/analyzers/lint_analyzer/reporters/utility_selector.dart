@@ -179,7 +179,8 @@ class UtilitySelector {
             (fileRecord) =>
                 fileRecord.functions.values.map(functionMetricsReport),
           )
-          .map(functionMetricViolationLevel))!;
+          .map(functionMetricViolationLevel)) ??
+      MetricValueLevel.none;
 
   static FileMetricsReport mergeFileReports(
     FileMetricsReport lhs,
