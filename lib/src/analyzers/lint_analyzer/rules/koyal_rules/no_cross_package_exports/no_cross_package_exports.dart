@@ -21,7 +21,8 @@ class NoCrossPackageExportsRule extends Rule {
           id: ruleId,
           documentation: const RuleDocumentation(
             name: 'No cross package exports',
-            brief: 'Warns when a library exports different libraries, serving as their proxy.',
+            brief:
+                'Warns when a library exports different libraries, serving as their proxy.',
           ),
           severity: readSeverity(config, Severity.error),
           excludes: readExcludes(config),
@@ -32,10 +33,6 @@ class NoCrossPackageExportsRule extends Rule {
     final _visitor = _Visitor();
 
     source.unit.visitChildren(_visitor);
-
-    if (!_visitor.isLibrary) {
-      return [];
-    }
 
     return _visitor.exports
         .map(
