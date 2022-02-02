@@ -3,15 +3,20 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:html/dom.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../../../reporters/models/html_reporter.dart';
 import '../../../metrics/metrics_list/cyclomatic_complexity/cyclomatic_complexity_metric.dart';
+import '../../../metrics/metrics_list/technical_debt/technical_debt_metric.dart';
 import '../../../metrics/models/metric_value_level.dart';
 import '../../../models/lint_file_report.dart';
-import '../../models/file_metrics_report.dart';
+import '../../../models/summary_lint_report_record.dart';
+import '../../lint_report_params.dart';
 import '../../utility_selector.dart';
+import 'components/icon.dart';
+import 'components/issue_details_tooltip.dart';
+import 'models/icon_type.dart';
+import 'models/report_table_record.dart';
 import 'utility_functions.dart';
 
 const _violationLevelFunctionStyle = {
@@ -40,29 +45,24 @@ const _numberOfArguments = 'Number of Arguments';
 const _numberOfArgumentsWithViolations = '$_numberOfArguments / violations';
 const _maximumNesting = 'Maximum Nesting';
 const _maximumNestingWithViolations = '$_maximumNesting / violations';
+const _technicalDebt = 'Technical Debt';
 
 const _codeIssues = 'Issues';
 const _designIssues = 'Design issues';
 
-@immutable
-class ReportTableRecord {
-  final String title;
-  final String link;
-
-  final FileMetricsReport report;
-
-  const ReportTableRecord({
-    required this.title,
-    required this.link,
-    required this.report,
-  });
-}
-
-class LintHtmlReporter extends HtmlReporter<LintFileReport> {
+/// Lint HTML reporter.
+///
+/// Use it to create reports in HTML format.
+class LintHtmlReporter extends HtmlReporter<LintFileReport,
+    SummaryLintReportRecord<Object>, LintReportParams> {
   LintHtmlReporter(String reportFolder) : super(reportFolder);
 
   @override
-  Future<void> report(Iterable<LintFileReport> records) async {
+  Future<void> report(
+    Iterable<LintFileReport> records, {
+    Iterable<SummaryLintReportRecord<Object>> summary = const [],
+    LintReportParams? additionalParams,
+  }) async {
     await super.report(records);
 
     for (final record in records) {
@@ -133,6 +133,14 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
       (prevValue, record) =>
           prevValue + record.report.maximumNestingLevelViolations,
     );
+    final technicalDebt = sortedRecords.fold<double>(
+      0,
+      (prevValue, record) => prevValue + record.report.technicalDebt,
+    );
+    final technicalDebtViolations = sortedRecords.fold<int>(
+      0,
+      (prevValue, record) => prevValue + record.report.technicalDebtViolations,
+    );
 
     final withCyclomaticComplexityViolations = complexityViolations > 0;
     final withSourceLinesOfCodeViolations = sourceLinesOfCodeViolations > 0;
@@ -166,7 +174,8 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
           ..append(Element.tag('th')..text = sourceLinesOfCodeTitle)
           ..append(Element.tag('th')..text = maintainabilityIndexTitle)
           ..append(Element.tag('th')..text = argumentsCountTitle)
-          ..append(Element.tag('th')..text = maximumNestingTitle)))
+          ..append(Element.tag('th')..text = maximumNestingTitle)
+          ..append(Element.tag('th')..text = _technicalDebt)))
       ..append(tableContent);
 
     return Element.tag('div')
@@ -198,6 +207,12 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
           _maximumNesting,
           averageMaximumNesting,
           violations: maximumNestingViolations,
+        ))
+        ..append(renderSummaryMetric(
+          _technicalDebt,
+          technicalDebt.toInt(),
+          unitType: sortedRecords.firstOrNull?.report.technicalDebtUnitType,
+          forceViolations: technicalDebtViolations > 0,
         )));
   }
 
@@ -331,77 +346,35 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
     final cyclomaticValues = Element.tag('td')
       ..classes.add('metrics-source-code__complexity');
     for (var i = 1; i <= sourceFileLines.length; ++i) {
-      final functionReport = record.functions.values.firstWhereOrNull(
-        (functionReport) =>
-            functionReport.location.start.line <= i &&
-            functionReport.location.end.line >= i,
-      );
-
       final complexityValueElement = Element.tag('div')
         ..classes.add('metrics-source-code__text');
 
-      var line = ' ';
+      final classReport = record.classes.entries.firstWhereOrNull((report) =>
+          report.value.location.start.line <= i &&
+          report.value.location.end.line >= i);
+      if (classReport != null && classReport.value.location.start.line == i) {
+        complexityValueElement
+          ..classes.add('metrics-source-code__text--with-icon')
+          ..append(renderComplexityIcon(classReport.value, classReport.key));
+      }
+
+      final functionReport = record.functions.entries.firstWhereOrNull(
+        (report) =>
+            report.value.location.start.line <= i &&
+            report.value.location.end.line >= i,
+      );
+
+      var line = '';
       if (functionReport != null) {
-        final report = UtilitySelector.functionMetricsReport(functionReport);
-
-        if (functionReport.location.start.line == i) {
-          final complexityTooltip = Element.tag('div')
-            ..classes.add('metrics-source-code__tooltip')
-            ..append(Element.tag('div')
-              ..classes.add('metrics-source-code__tooltip-title')
-              ..text = 'Function stats:')
-            ..append(Element.tag('p')
-              ..classes.add('metrics-source-code__tooltip-text')
-              ..append(renderFunctionMetric(
-                _cyclomaticComplexity,
-                report.cyclomaticComplexity,
-              )))
-            ..append(Element.tag('p')
-              ..classes.add('metrics-source-code__tooltip-text')
-              ..append(renderFunctionMetric(
-                _sourceLinesOfCode,
-                report.sourceLinesOfCode,
-              )))
-            ..append(Element.tag('p')
-              ..classes.add('metrics-source-code__tooltip-text')
-              ..append(renderFunctionMetric(
-                _maintainabilityIndex,
-                report.maintainabilityIndex,
-              )))
-            ..append(Element.tag('p')
-              ..classes.add('metrics-source-code__tooltip-text')
-              ..append(renderFunctionMetric(
-                _numberOfArguments,
-                report.argumentsCount,
-              )))
-            ..append(Element.tag('p')
-              ..classes.add('metrics-source-code__tooltip-text')
-              ..append(renderFunctionMetric(
-                _maximumNesting,
-                report.maximumNestingLevel,
-              )));
-
-          final complexityIcon = Element.tag('div')
-            ..classes.addAll([
-              'metrics-source-code__icon',
-              'metrics-source-code__icon--complexity',
-            ])
-            ..append(Element.tag('svg')
-              ..attributes['xmlns'] = 'http://www.w3.org/2000/svg'
-              ..attributes['viewBox'] = '0 0 32 32'
-              ..append(Element.tag('path')
-                ..attributes['d'] =
-                    'M16 3C8.832 3 3 8.832 3 16s5.832 13 13 13 13-5.832 13-13S23.168 3 16 3zm0 2c6.086 0 11 4.914 11 11s-4.914 11-11 11S5 22.086 5 16 9.914 5 16 5zm-1 5v2h2v-2zm0 4v8h2v-8z'))
-            ..append(complexityTooltip);
-
+        if (functionReport.value.location.start.line == i) {
           complexityValueElement
-            ..attributes['class'] =
-                '${complexityValueElement.attributes['class']} metrics-source-code__text--with-icon'
-                    .trim()
-            ..append(complexityIcon);
+            ..classes.add('metrics-source-code__text--with-icon')
+            ..append(
+              renderComplexityIcon(functionReport.value, functionReport.key),
+            );
         }
 
-        final lineWithComplexityIncrement = functionReport
+        final lineWithComplexityIncrement = functionReport.value
                 .metric(CyclomaticComplexityMetric.metricId)
                 ?.context
                 .where((element) => element.location.start.line == i)
@@ -409,8 +382,7 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
             0;
 
         if (lineWithComplexityIncrement > 0) {
-          line = '$line +$lineWithComplexityIncrement'.trim();
-          complexityValueElement.text = line.replaceAll(' ', '&nbsp;');
+          line += '+$lineWithComplexityIncrement cyclo';
         }
 
 /*      uncomment this block if you need check lines with code
@@ -419,8 +391,7 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
           line += ' c';
         }
 */
-        final functionViolationLevel =
-            UtilitySelector.functionMetricViolationLevel(report);
+        final functionViolationLevel = functionReport.value.metricsLevel;
 
         final lineViolationStyle = lineWithComplexityIncrement > 0
             ? _violationLevelLineStyle[functionViolationLevel]
@@ -429,40 +400,30 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
         complexityValueElement.classes.add(lineViolationStyle ?? '');
       }
 
+      final debt = record.file
+          .metric(TechnicalDebtMetric.metricId)
+          ?.context
+          .firstWhereOrNull((context) => context.location.start.line == i)
+          ?.message;
+      if (debt != null) {
+        line += debt;
+      }
+
+      line = line.trim();
+      if (line.isNotEmpty) {
+        complexityValueElement.text = line.replaceAll(' ', '&nbsp;');
+      }
+
       final architecturalIssues = record.antiPatternCases
           .firstWhereOrNull((element) => element.location.start.line == i);
 
       if (architecturalIssues != null) {
-        final issueTooltip = Element.tag('div')
-          ..classes.add('metrics-source-code__tooltip')
-          ..append(Element.tag('div')
-            ..classes.add('metrics-source-code__tooltip-title')
-            ..text = architecturalIssues.ruleId)
-          ..append(Element.tag('p')
-            ..classes.add('metrics-source-code__tooltip-section')
-            ..text = architecturalIssues.message)
-          ..append(Element.tag('p')
-            ..classes.add('metrics-source-code__tooltip-section')
-            ..text = architecturalIssues.verboseMessage)
-          ..append(Element.tag('a')
-            ..classes.add('metrics-source-code__tooltip-link')
-            ..attributes['href'] = architecturalIssues.documentation.toString()
-            ..attributes['target'] = '_blank'
-            ..attributes['rel'] = 'noopener noreferrer'
-            ..attributes['title'] = 'Open documentation'
-            ..text = 'Open documentation');
-
         final issueIcon = Element.tag('div')
           ..classes.addAll(
             ['metrics-source-code__icon', 'metrics-source-code__icon--issue'],
           )
-          ..append(Element.tag('svg')
-            ..attributes['xmlns'] = 'http://www.w3.org/2000/svg'
-            ..attributes['viewBox'] = '0 0 24 24'
-            ..append(Element.tag('path')
-              ..attributes['d'] =
-                  'M12 1.016c-.393 0-.786.143-1.072.43l-9.483 9.482a1.517 1.517 0 000 2.144l9.483 9.485c.286.286.667.443 1.072.443s.785-.157 1.072-.443l9.485-9.485a1.517 1.517 0 000-2.144l-9.485-9.483A1.513 1.513 0 0012 1.015zm0 2.183L20.8 12 12 20.8 3.2 12 12 3.2zM11 7v6h2V7h-2zm0 8v2h2v-2h-2z'))
-          ..append(issueTooltip);
+          ..append(renderIcon(IconType.issue))
+          ..append(renderIssueDetailsTooltip(architecturalIssues));
 
         complexityValueElement.append(issueIcon);
       }
@@ -500,8 +461,7 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
               ..append(Element.tag('td')
                 ..classes.add('metrics-source-code__number-lines'))
               ..append(Element.tag('td')
-                ..classes.add('metrics-source-code__complexity')
-                ..text = 'Complexity')
+                ..classes.add('metrics-source-code__complexity'))
               ..append(Element.tag('td')
                 ..classes.add('metrics-source-code__code')
                 ..text = 'Source code')))
@@ -584,6 +544,13 @@ class LintHtmlReporter extends HtmlReporter<LintFileReport> {
           report.averageMaximumNestingLevel,
           violations: report.maximumNestingLevelViolations,
         ),
+        if (report.technicalDebt > 0)
+          renderSummaryMetric(
+            _technicalDebt,
+            report.technicalDebt.toInt(),
+            unitType: report.technicalDebtUnitType,
+            forceViolations: report.technicalDebtViolations > 0,
+          ),
         if (record.issues.isNotEmpty)
           renderSummaryMetric(
             _codeIssues,

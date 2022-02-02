@@ -3,33 +3,43 @@ import 'models/metric_value_level.dart';
 /// Returns the url of a page containing documentation associated with [metricId]
 Uri documentation(String metricId) => Uri(
       scheme: 'https',
-      host: 'github.com',
+      host: 'dartcodemetrics.dev',
       pathSegments: [
-        'dart-code-checker',
-        'dart-code-metrics',
-        'blob',
-        'master',
-        'doc',
+        'docs',
         'metrics',
-        '$metricId.md',
+        metricId,
       ],
     );
 
-/// Returns a threshold from [Map] based [config] for metrics with [metricId] otherwise [defaultValue]
-T readThreshold<T extends num>(
+/// Returns a nullable threshold from [config] for metric with [metricId]
+T? readNullableThreshold<T extends num>(
   Map<String, Object?> config,
   String metricId,
-  T defaultValue,
-) {
-  final configValue = config[metricId]?.toString();
+) =>
+    readConfigValue<T>(config, metricId, 'threshold') ??
+    readConfigValue<T>(config, metricId);
+
+/// Returns a nullable value from [config] for metric with [metricId]
+T? readConfigValue<T extends Object>(
+  Map<String, Object?> config,
+  String metricId, [
+  String? valueName,
+]) {
+  final metricConfig = config[metricId];
+
+  final configValue = metricConfig is Map<String, Object?>
+      ? metricConfig[valueName]?.toString()
+      : (valueName == null ? metricConfig?.toString() : null);
 
   if (configValue != null && T == int) {
-    return int.tryParse(configValue) as T? ?? defaultValue;
+    return int.tryParse(configValue) as T?;
   } else if (configValue != null && T == double) {
-    return double.tryParse(configValue) as T? ?? defaultValue;
+    return double.tryParse(configValue) as T?;
+  } else if (configValue != null && T == String) {
+    return configValue as T?;
   }
 
-  return defaultValue;
+  return null;
 }
 
 /// Returns calculated [MetricValueLevel] based on the [value] to [warningLevel] ratio

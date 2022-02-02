@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:collection/collection.dart';
@@ -33,7 +35,7 @@ abstract class IntlBaseVisitor extends GeneralizingAstVisitor<void> {
 
   @override
   void visitFieldDeclaration(FieldDeclaration node) {
-    if (node.fields.type?.as<TypeName>()?.name.name != 'String') {
+    if (node.fields.type?.as<NamedType>()?.name.name != 'String') {
       return;
     }
 
@@ -157,7 +159,6 @@ abstract class IntlBaseVisitor extends GeneralizingAstVisitor<void> {
   }
 }
 
-@immutable
 abstract class IntlBaseIssue {
   final AstNode node;
   final String? nameFailure;

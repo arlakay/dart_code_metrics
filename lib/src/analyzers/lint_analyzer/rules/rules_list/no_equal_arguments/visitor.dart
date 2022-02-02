@@ -1,4 +1,4 @@
-part of 'no_equal_arguments.dart';
+part of 'no_equal_arguments_rule.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _arguments = <Expression>[];
@@ -30,7 +30,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
     _visitArguments(node.argumentList.arguments);
   }
 
-  void _visitArguments(NodeList<Expression> arguments) {
+  void _visitArguments(Iterable<Expression> arguments) {
     final notIgnoredArguments = arguments.where(_isNotIgnored).toList();
 
     for (final argument in notIgnoredArguments) {

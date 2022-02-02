@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:analyzer/dart/element/type.dart';
 import 'package:collection/collection.dart';
 
@@ -21,6 +23,9 @@ bool isPaddingWidget(DartType? type) =>
 
 bool _isWidget(DartType? type) =>
     type?.getDisplayString(withNullability: false) == 'Widget';
+
+bool isBuildContext(DartType? type) =>
+    type?.getDisplayString(withNullability: false) == 'BuildContext';
 
 bool _isSubclassOfWidget(DartType? type) =>
     type is InterfaceType && type.allSupertypes.any(_isWidget);

@@ -1,19 +1,17 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:collection/collection.dart';
-import 'package:meta/meta.dart';
 import 'package:source_span/source_span.dart';
 
 import '../metrics/models/metric_value.dart';
 import '../metrics/models/metric_value_level.dart';
 
 /// Represents a metrics report collected for an entity.
-@immutable
 class Report {
   /// The source code location of the target entity.
   final SourceSpan location;
 
   /// The node that represents a dart code snippet in the AST structure.
-  final Declaration declaration;
+  final AstNode declaration;
 
   /// Target entity metrics.
   final Iterable<MetricValue<num>> metrics;
