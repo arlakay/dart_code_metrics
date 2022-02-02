@@ -1,4 +1,4 @@
-part of 'avoid_wrapping_in_padding_rule.dart';
+part of 'avoid_wrapping_in_padding.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _expressions = <Expression>[];

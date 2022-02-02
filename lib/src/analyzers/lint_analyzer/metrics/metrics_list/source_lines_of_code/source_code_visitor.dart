@@ -35,10 +35,7 @@ class SourceCodeVisitor extends RecursiveAstVisitor<void> {
   void _collectFunctionBodyData(Token? firstToken, Token? lastToken) {
     var token = firstToken;
     while (token != lastToken && token != null) {
-      if (!token.isSynthetic) {
-        _linesWithCode.add(_lineInfo.getLocation(token.offset).lineNumber);
-      }
-
+      _linesWithCode.add(_lineInfo.getLocation(token.offset).lineNumber);
       token = token.next;
     }
   }

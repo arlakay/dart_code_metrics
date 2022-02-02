@@ -1,4 +1,4 @@
-part of 'always_remove_listener_rule.dart';
+part of 'always_remove_listener.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _missingInvocations = <MethodInvocation>[];
@@ -154,9 +154,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
 
     return removedTarget is Identifier &&
         removedTarget.name == targetName &&
-        (removedTarget.staticElement == staticElement ||
-            removedTarget.staticElement?.declaration ==
-                staticElement?.declaration);
+        removedTarget.staticElement == staticElement;
   }
 
   bool _haveSameCallbacks(

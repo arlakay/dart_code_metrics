@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:analyzer/dart/analysis/analysis_context.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -11,18 +11,11 @@ import '../analysis_options_utils.dart';
 const _analysisOptionsFileName = 'analysis_options.yaml';
 
 /// Class representing dart analysis options
+@immutable
 class AnalysisOptions {
   final Map<String, Object> options;
 
-  final String? _path;
-
-  const AnalysisOptions(this._path, this.options);
-
-  String? get folderPath {
-    final finalPath = _path;
-
-    return finalPath == null ? null : p.dirname(finalPath);
-  }
+  const AnalysisOptions(this.options);
 
   Iterable<String> readIterableOfString(Iterable<String> pathSegments) {
     Object? data = options;
@@ -95,16 +88,6 @@ class AnalysisOptions {
   }
 }
 
-Future<AnalysisOptions?> analysisOptionsFromContext(
-  AnalysisContext context,
-) async {
-  final optionsFilePath = context.contextRoot.optionsFile?.path;
-
-  return optionsFilePath == null
-      ? null
-      : analysisOptionsFromFile(File(optionsFilePath));
-}
-
 Future<AnalysisOptions> analysisOptionsFromFilePath(String path) {
   final analysisOptionsFile = File(p.absolute(path, _analysisOptionsFileName));
 
@@ -113,8 +96,8 @@ Future<AnalysisOptions> analysisOptionsFromFilePath(String path) {
 
 Future<AnalysisOptions> analysisOptionsFromFile(File? options) async =>
     options != null && options.existsSync()
-        ? AnalysisOptions(options.path, await _loadConfigFromYamlFile(options))
-        : const AnalysisOptions(null, {});
+        ? AnalysisOptions(await _loadConfigFromYamlFile(options))
+        : const AnalysisOptions({});
 
 Future<Map<String, Object>> _loadConfigFromYamlFile(File options) async {
   try {

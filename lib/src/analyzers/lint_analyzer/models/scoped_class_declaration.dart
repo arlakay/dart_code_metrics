@@ -1,8 +1,10 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:meta/meta.dart';
 
 import 'class_type.dart';
 
 /// Represents a declaration of a class / mixin / extension.
+@immutable
 class ScopedClassDeclaration {
   /// The type of the declared class entity.
   final ClassType type;

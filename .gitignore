@@ -29,4 +29,3 @@ doc/api/
 .DS_Store
 
 .vscode/launch.json
-test/fake_test.dart

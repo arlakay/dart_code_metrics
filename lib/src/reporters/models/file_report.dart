@@ -1,4 +1,7 @@
+import 'package:meta/meta.dart';
+
 /// Represents a report collected for a file.
+@immutable
 abstract class FileReport {
   /// The path to the target file.
   final String path;

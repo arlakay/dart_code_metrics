@@ -1,4 +1,4 @@
-part of 'avoid_returning_widgets_rule.dart';
+part of 'avoid_returning_widgets.dart';
 
 class _ConfigParser {
   static const _ignoredNamesConfig = 'ignored-names';

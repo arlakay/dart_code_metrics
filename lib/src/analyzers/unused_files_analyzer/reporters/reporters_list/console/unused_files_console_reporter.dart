@@ -1,26 +1,18 @@
 import 'dart:io';
 
+import 'package:ansicolor/ansicolor.dart';
+
 import '../../../../../reporters/models/console_reporter.dart';
 import '../../../models/unused_files_file_report.dart';
-import '../../unused_files_report_params.dart';
 
-/// Unused files console reporter.
-///
-/// Use it to create reports in console format.
-class UnusedFilesConsoleReporter extends ConsoleReporter<UnusedFilesFileReport,
-    void, UnusedFilesReportParams> {
+class UnusedFilesConsoleReporter
+    extends ConsoleReporter<UnusedFilesFileReport> {
   UnusedFilesConsoleReporter(IOSink output) : super(output);
 
   @override
-  Future<void> report(
-    Iterable<UnusedFilesFileReport> records, {
-    Iterable<void> summary = const [],
-    UnusedFilesReportParams? additionalParams,
-  }) async {
+  Future<void> report(Iterable<UnusedFilesFileReport> records) async {
     if (records.isEmpty) {
-      if (additionalParams?.congratulate ?? true) {
-        output.writeln('${okPen('✔')} no unused files found!');
-      }
+      output.writeln('No unused files found!');
 
       return;
     }
@@ -29,19 +21,13 @@ class UnusedFilesConsoleReporter extends ConsoleReporter<UnusedFilesFileReport,
       ..sort((a, b) => a.relativePath.compareTo(b.relativePath));
 
     for (final analysisRecord in sortedRecords) {
-      output.writeln(
-        '${warningPen('⚠')} unused file: ${analysisRecord.relativePath}',
-      );
+      output.writeln('Unused file: ${analysisRecord.relativePath}');
     }
 
-    final filesCount = alarmPen(sortedRecords.length);
-
-    final outputRecord = (additionalParams?.deleteUnusedFiles ?? false)
-        ? '${okPen('✔')} $filesCount files were successfully deleted'
-        : '${alarmPen('✖')} total unused files - $filesCount';
+    final color = AnsiPen()..yellow();
 
     output
       ..writeln('')
-      ..writeln(outputRecord);
+      ..writeln('Total unused files - ${color(sortedRecords.length)}');
   }
 }

@@ -1,4 +1,4 @@
-part of 'double_literal_format_rule.dart';
+part of 'double_literal_format.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _literals = <DoubleLiteral>[];

@@ -1,4 +1,4 @@
-part of 'prefer_conditional_expressions_rule.dart';
+part of 'prefer_conditional_expressions.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _statementsInfo = <_StatementInfo>[];
@@ -80,6 +80,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
   }
 }
 
+@immutable
 class _StatementInfo {
   final IfStatement statement;
   final AstNode unwrappedThenStatement;

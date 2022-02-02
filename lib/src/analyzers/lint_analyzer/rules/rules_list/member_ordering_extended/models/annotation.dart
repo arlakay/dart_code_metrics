@@ -1,5 +1,6 @@
-part of '../member_ordering_extended_rule.dart';
+part of '../member_ordering_extended.dart';
 
+@immutable
 class _Annotation {
   final String name;
   final String? publicName;

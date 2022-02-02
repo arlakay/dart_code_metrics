@@ -1,7 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 
 import '../../../../../utils/node_utils.dart';
-import '../../../../../utils/string_extensions.dart';
+import '../../../../../utils/string_extension.dart';
 import '../../../models/context_message.dart';
 import '../../../models/entity_type.dart';
 import '../../../models/internal_resolved_unit_result.dart';
@@ -11,14 +11,14 @@ import '../../metric_utils.dart';
 import '../../models/function_metric.dart';
 import '../../models/metric_computation_result.dart';
 import '../../models/metric_documentation.dart';
-import '../../models/metric_value.dart';
 import 'nesting_level_visitor.dart';
 
 const _documentation = MetricDocumentation(
   name: 'Maximum Nesting Level',
   shortName: 'MAXNESTING',
+  brief: 'The maximum nesting level of control structures within a method',
   measuredType: EntityType.methodEntity,
-  recomendedThreshold: 5,
+  examples: [],
 );
 
 /// Maximum Nesting Level (MAXNESTING)
@@ -34,17 +34,16 @@ class MaximumNestingLevelMetric extends FunctionMetric<int> {
       : super(
           id: metricId,
           documentation: _documentation,
-          threshold: readNullableThreshold<int>(config, metricId),
+          threshold: readThreshold<int>(config, metricId, 5),
           levelComputer: valueLevel,
         );
 
   @override
   MetricComputationResult<int> computeImplementation(
-    AstNode node,
+    Declaration node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
-    Iterable<MetricValue<num>> otherMetricsValues,
   ) {
     final visitor = NestingLevelVisitor(node);
     node.visitChildren(visitor);
@@ -56,8 +55,8 @@ class MaximumNestingLevelMetric extends FunctionMetric<int> {
   }
 
   @override
-  String commentMessage(String nodeType, int value, int? threshold) {
-    final exceeds = threshold != null && value > threshold
+  String commentMessage(String nodeType, int value, int threshold) {
+    final exceeds = value > threshold
         ? ', which exceeds the maximum of $threshold allowed'
         : '';
 

@@ -8,13 +8,14 @@ import '../metric_utils.dart';
 import '../models/function_metric.dart';
 import '../models/metric_computation_result.dart';
 import '../models/metric_documentation.dart';
-import '../models/metric_value.dart';
 
 const _documentation = MetricDocumentation(
   name: 'Lines of Code',
   shortName: 'LOC',
+  brief:
+      'The number of physical lines of code of a method, including blank lines and comments',
   measuredType: EntityType.methodEntity,
-  recomendedThreshold: 100,
+  examples: [],
 );
 
 /// Lines of Code (LOC)
@@ -29,17 +30,16 @@ class LinesOfCodeMetric extends FunctionMetric<int> {
       : super(
           id: metricId,
           documentation: _documentation,
-          threshold: readNullableThreshold<int>(config, metricId),
+          threshold: readThreshold<int>(config, metricId, 100),
           levelComputer: valueLevel,
         );
 
   @override
   MetricComputationResult<int> computeImplementation(
-    AstNode node,
+    Declaration node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
-    Iterable<MetricValue<num>> otherMetricsValues,
   ) =>
       MetricComputationResult(
         value: 1 +
@@ -48,21 +48,17 @@ class LinesOfCodeMetric extends FunctionMetric<int> {
       );
 
   @override
-  String commentMessage(String nodeType, int value, int? threshold) {
-    final exceeds = threshold != null && value > threshold
-        ? ', exceeds the maximum of $threshold allowed'
-        : '';
+  String commentMessage(String nodeType, int value, int threshold) {
+    final exceeds =
+        value > threshold ? ', exceeds the maximum of $threshold allowed' : '';
     final lines = '$value ${value == 1 ? 'line' : 'lines'} of code';
 
     return 'This $nodeType has $lines$exceeds.';
   }
 
   @override
-  String? recommendationMessage(String nodeType, int value, int? threshold) =>
-      (threshold != null && value > threshold)
+  String? recommendationMessage(String nodeType, int value, int threshold) =>
+      (value > threshold)
           ? 'Consider breaking this $nodeType up into smaller parts.'
           : null;
-
-  @override
-  String? unitType(int value) => value == 1 ? 'line' : 'lines';
 }
