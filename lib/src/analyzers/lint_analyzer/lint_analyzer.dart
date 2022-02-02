@@ -1,62 +1,62 @@
 import 'dart:io';
+import 'dart:math';
 
+import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:file/local.dart';
+import 'package:glob/glob.dart';
 import 'package:path/path.dart';
 
-import '../../config_builder/config_builder.dart';
-import '../../config_builder/models/analysis_options.dart';
-import '../../reporters/models/file_report.dart';
+import '../../config_builder/models/config.dart';
 import '../../reporters/models/reporter.dart';
-import '../../utils/analyzer_utils.dart';
 import '../../utils/exclude_utils.dart';
-import '../../utils/file_utils.dart';
 import '../../utils/node_utils.dart';
-import 'lint_analysis_config.dart';
 import 'lint_config.dart';
+import 'metrics/halstead_volume_ast_visitor.dart';
+import 'metrics/metric_utils.dart';
 import 'metrics/metrics_list/cyclomatic_complexity/cyclomatic_complexity_metric.dart';
+import 'metrics/metrics_list/source_lines_of_code/source_code_visitor.dart';
 import 'metrics/metrics_list/source_lines_of_code/source_lines_of_code_metric.dart';
+import 'metrics/models/metric_documentation.dart';
 import 'metrics/models/metric_value.dart';
+import 'metrics/models/metric_value_level.dart';
 import 'metrics/scope_visitor.dart';
+import 'models/entity_type.dart';
 import 'models/internal_resolved_unit_result.dart';
 import 'models/issue.dart';
 import 'models/lint_file_report.dart';
 import 'models/report.dart';
 import 'models/scoped_class_declaration.dart';
 import 'models/scoped_function_declaration.dart';
-import 'models/summary_lint_report_record.dart';
 import 'models/suppression.dart';
-import 'reporters/lint_report_params.dart';
 import 'reporters/reporter_factory.dart';
-import 'utils/report_utils.dart';
+import 'reporters/utility_selector.dart';
 
-/// The analyzer responsible for collecting lint reports.
 class LintAnalyzer {
   const LintAnalyzer();
 
-  /// Returns a reporter for the given [name]. Use the reporter
-  /// to convert analysis reports to console, JSON or other supported format.
-  Reporter<FileReport, Object, LintReportParams>? getReporter({
+  Reporter? getReporter({
+    required Config config,
     required String name,
     required IOSink output,
     required String reportFolder,
-    @Deprecated('Unused argument. Will be removed in 5.0.0.') // ignore: avoid-unused-parameters
-        LintConfig? config,
   }) =>
       reporter(
+        config: config,
         name: name,
         output: output,
         reportFolder: reportFolder,
       );
 
-  /// Returns a lint report for analyzing given [result].
-  /// The analysis is configured with the [config].
   LintFileReport? runPluginAnalysis(
     ResolvedUnitResult result,
-    LintAnalysisConfig config,
+    LintConfig config,
     String rootFolder,
   ) {
     if (!isExcluded(result.path, config.globalExcludes)) {
-      return _analyzeFile(
+      return _runAnalysisForFile(
         result,
         config,
         rootFolder,
@@ -67,52 +67,44 @@ class LintAnalyzer {
     return null;
   }
 
-  /// Returns a list of lint reports for analyzing all files in the given [folders].
-  /// The analysis is configured with the [config].
   Future<Iterable<LintFileReport>> runCliAnalysis(
     Iterable<String> folders,
     String rootFolder,
-    LintConfig config, {
-    String? sdkPath,
-  }) async {
-    final collection =
-        createAnalysisContextCollection(folders, rootFolder, sdkPath);
+    LintConfig config,
+  ) async {
+    final collection = AnalysisContextCollection(
+      includedPaths:
+          folders.map((path) => normalize(join(rootFolder, path))).toList(),
+      resourceProvider: PhysicalResourceProvider.INSTANCE,
+    );
+
+    final filePaths = folders
+        .expand((directory) => Glob('$directory/**.dart')
+            .listFileSystemSync(
+              const LocalFileSystem(),
+              root: rootFolder,
+              followLinks: false,
+            )
+            .whereType<File>()
+            .where((entity) => !isExcluded(
+                  relative(entity.path, from: rootFolder),
+                  config.globalExcludes,
+                ))
+            .map((entity) => entity.path))
+        .toSet();
 
     final analyzerResult = <LintFileReport>[];
 
     for (final context in collection.contexts) {
-      final analysisOptions = await analysisOptionsFromContext(context) ??
-          await analysisOptionsFromFilePath(rootFolder);
-
-      final excludesRootFolder = analysisOptions.folderPath ?? rootFolder;
-
-      final contextConfig =
-          ConfigBuilder.getLintConfigFromOptions(analysisOptions).merge(config);
-      final lintAnalysisConfig = ConfigBuilder.getLintAnalysisConfig(
-        contextConfig,
-        excludesRootFolder,
-      );
-
-      final contextFolders = folders
-          .where((path) => normalize(join(rootFolder, path))
-              .startsWith(context.contextRoot.root.path))
-          .toList();
-
-      final filePaths = extractDartFilesFromFolders(
-        contextFolders,
-        rootFolder,
-        lintAnalysisConfig.globalExcludes,
-      );
-
       final analyzedFiles =
           filePaths.intersection(context.contextRoot.analyzedFiles().toSet());
 
       for (final filePath in analyzedFiles) {
-        final unit = await context.currentSession.getResolvedUnit(filePath);
+        final unit = await context.currentSession.getResolvedUnit2(filePath);
         if (unit is ResolvedUnitResult) {
-          final result = _analyzeFile(
+          final result = _runAnalysisForFile(
             unit,
-            lintAnalysisConfig,
+            config,
             rootFolder,
             filePath: filePath,
           );
@@ -127,95 +119,76 @@ class LintAnalyzer {
     return analyzerResult;
   }
 
-  Iterable<SummaryLintReportRecord<Object>> getSummary(
-    Iterable<LintFileReport> records,
-  ) =>
-      [
-        SummaryLintReportRecord<Iterable<String>>(
-          title: 'Scanned folders',
-          value: scannedFolders(records),
-        ),
-        SummaryLintReportRecord<int>(
-          title: 'Total scanned files',
-          value: totalFiles(records),
-        ),
-        SummaryLintReportRecord<int>(
-          title: 'Total lines of source code',
-          value: totalSLOC(records),
-        ),
-        SummaryLintReportRecord<int>(
-          title: 'Total classes',
-          value: totalClasses(records),
-        ),
-        SummaryLintReportRecord<num>(
-          title: 'Average Cyclomatic Number per line of code',
-          value: averageCYCLO(records),
-          violations:
-              metricViolations(records, CyclomaticComplexityMetric.metricId),
-        ),
-        SummaryLintReportRecord<int>(
-          title: 'Average Source Lines of Code per method',
-          value: averageSLOC(records),
-          violations:
-              metricViolations(records, SourceLinesOfCodeMetric.metricId),
-        ),
-        SummaryLintReportRecord<String>(
-          title: 'Total tech debt',
-          value: totalTechDebt(records),
-        ),
-      ];
-
-  LintFileReport? _analyzeFile(
+  LintFileReport? _runAnalysisForFile(
     ResolvedUnitResult result,
-    LintAnalysisConfig config,
+    LintConfig config,
     String rootFolder, {
     String? filePath,
   }) {
-    if (filePath != null && _isSupported(result)) {
-      final ignores = Suppression(result.content, result.lineInfo);
+    final unit = result.unit;
+    final content = result.content;
+
+    if (unit != null &&
+        content != null &&
+        result.state == ResultState.VALID &&
+        filePath != null &&
+        _isSupported(result)) {
+      final ignores = Suppression(content, result.lineInfo);
       final internalResult = InternalResolvedUnitResult(
         filePath,
-        result.content,
-        result.unit,
+        content,
+        unit,
         result.lineInfo,
       );
       final relativePath = relative(filePath, from: rootFolder);
 
-      final issues = <Issue>[];
-      if (!isExcluded(filePath, config.rulesExcludes)) {
-        issues.addAll(
-          _checkOnCodeIssues(
-            ignores,
-            internalResult,
-            config,
-          ),
-        );
-      }
+      final issues = _checkOnCodeIssues(
+        ignores,
+        internalResult,
+        config,
+        filePath,
+        rootFolder,
+      );
 
       if (!isExcluded(filePath, config.metricsExcludes)) {
         final visitor = ScopeVisitor();
         internalResult.unit.visitChildren(visitor);
 
-        final classMetrics =
-            _checkClassMetrics(visitor, internalResult, config);
+        final functions = visitor.functions.where((function) {
+          final declaration = function.declaration;
+          if (declaration is ConstructorDeclaration &&
+              declaration.body is EmptyFunctionBody) {
+            return false;
+          } else if (declaration is MethodDeclaration &&
+              declaration.body is EmptyFunctionBody) {
+            return false;
+          }
 
-        final fileMetrics = _checkFileMetrics(visitor, internalResult, config);
-
-        final functionMetrics =
-            _checkFunctionMetrics(visitor, internalResult, config);
+          return true;
+        }).toList();
 
         final antiPatterns = _checkOnAntiPatterns(
           ignores,
           internalResult,
+          functions,
           config,
-          classMetrics,
-          functionMetrics,
+        );
+
+        final classMetrics = _checkClassMetrics(
+          visitor,
+          internalResult,
+          config,
+        );
+
+        final functionMetrics = _checkFunctionMetrics(
+          visitor,
+          internalResult,
+          config,
         );
 
         return LintFileReport(
           path: filePath,
           relativePath: relativePath,
-          file: fileMetrics,
           classes: Map.unmodifiable(classMetrics
               .map<String, Report>((key, value) => MapEntry(key.name, value))),
           functions: Map.unmodifiable(functionMetrics.map<String, Report>(
@@ -229,12 +202,6 @@ class LintAnalyzer {
       return LintFileReport(
         path: filePath,
         relativePath: relativePath,
-        file: Report(
-          location:
-              nodeLocation(node: internalResult.unit, source: internalResult),
-          metrics: const [],
-          declaration: internalResult.unit,
-        ),
         classes: const {},
         functions: const {},
         issues: issues,
@@ -248,15 +215,18 @@ class LintAnalyzer {
   Iterable<Issue> _checkOnCodeIssues(
     Suppression ignores,
     InternalResolvedUnitResult source,
-    LintAnalysisConfig config,
+    LintConfig config,
+    String filePath,
+    String? rootFolder,
   ) =>
       config.codeRules
           .where((rule) =>
               !ignores.isSuppressed(rule.id) &&
-              !isExcluded(
-                source.path,
-                prepareExcludes(rule.excludes, config.excludesRootFolder),
-              ))
+              (rootFolder == null ||
+                  !isExcluded(
+                    filePath,
+                    prepareExcludes(rule.excludes, rootFolder),
+                  )))
           .expand(
             (rule) =>
                 rule.check(source).where((issue) => !ignores.isSuppressedAt(
@@ -269,19 +239,13 @@ class LintAnalyzer {
   Iterable<Issue> _checkOnAntiPatterns(
     Suppression ignores,
     InternalResolvedUnitResult source,
-    LintAnalysisConfig config,
-    Map<ScopedClassDeclaration, Report> classMetrics,
-    Map<ScopedFunctionDeclaration, Report> functionMetrics,
+    Iterable<ScopedFunctionDeclaration> functions,
+    LintConfig config,
   ) =>
       config.antiPatterns
-          .where((pattern) =>
-              !ignores.isSuppressed(pattern.id) &&
-              !isExcluded(
-                source.path,
-                prepareExcludes(pattern.excludes, config.excludesRootFolder),
-              ))
+          .where((pattern) => !ignores.isSuppressed(pattern.id))
           .expand((pattern) => pattern
-              .check(source, classMetrics, functionMetrics)
+              .legacyCheck(source, functions, config.metricsConfig)
               .where((issue) => !ignores.isSuppressedAt(
                     issue.ruleId,
                     issue.location.start.line,
@@ -291,38 +255,32 @@ class LintAnalyzer {
   Map<ScopedClassDeclaration, Report> _checkClassMetrics(
     ScopeVisitor visitor,
     InternalResolvedUnitResult source,
-    LintAnalysisConfig config,
+    LintConfig config,
   ) {
     final classRecords = <ScopedClassDeclaration, Report>{};
 
     for (final classDeclaration in visitor.classes) {
-      final metrics = <MetricValue<num>>[];
-
-      for (final metric in config.classesMetrics) {
-        if (metric.supports(
-          classDeclaration.declaration,
-          visitor.classes,
-          visitor.functions,
-          source,
-          metrics,
-        )) {
-          metrics.add(metric.compute(
-            classDeclaration.declaration,
-            visitor.classes,
-            visitor.functions,
-            source,
-            metrics,
-          ));
-        }
-      }
-
       final report = Report(
         location: nodeLocation(
           node: classDeclaration.declaration,
           source: source,
         ),
         declaration: classDeclaration.declaration,
-        metrics: metrics,
+        metrics: [
+          for (final metric in config.classesMetrics)
+            if (metric.supports(
+              classDeclaration.declaration,
+              visitor.classes,
+              visitor.functions,
+              source,
+            ))
+              metric.compute(
+                classDeclaration.declaration,
+                visitor.classes,
+                visitor.functions,
+                source,
+              ),
+        ],
       );
 
       classRecords[classDeclaration] = report;
@@ -331,76 +289,150 @@ class LintAnalyzer {
     return classRecords;
   }
 
-  Report _checkFileMetrics(
-    ScopeVisitor visitor,
-    InternalResolvedUnitResult source,
-    LintAnalysisConfig config,
-  ) {
-    final metrics = <MetricValue<num>>[];
-
-    for (final metric in config.fileMetrics) {
-      if (metric.supports(
-        source.unit,
-        visitor.classes,
-        visitor.functions,
-        source,
-        metrics,
-      )) {
-        metrics.add(metric.compute(
-          source.unit,
-          visitor.classes,
-          visitor.functions,
-          source,
-          metrics,
-        ));
-      }
-    }
-
-    return Report(
-      location: nodeLocation(node: source.unit, source: source),
-      declaration: source.unit,
-      metrics: metrics,
-    );
-  }
-
   Map<ScopedFunctionDeclaration, Report> _checkFunctionMetrics(
     ScopeVisitor visitor,
     InternalResolvedUnitResult source,
-    LintAnalysisConfig config,
+    LintConfig config,
   ) {
     final functionRecords = <ScopedFunctionDeclaration, Report>{};
 
     for (final function in visitor.functions) {
-      final metrics = <MetricValue<num>>[];
-
-      for (final metric in config.methodsMetrics) {
-        if (metric.supports(
-          function.declaration,
-          visitor.classes,
-          visitor.functions,
-          source,
-          metrics,
-        )) {
-          metrics.add(metric.compute(
+      final cyclomatic = config.methodsMetrics
+          .firstWhere(
+            (metric) => metric.id == CyclomaticComplexityMetric.metricId,
+          )
+          .compute(
             function.declaration,
             visitor.classes,
             visitor.functions,
             source,
-            metrics,
-          ));
-        }
-      }
+          );
 
-      functionRecords[function] = Report(
-        location: nodeLocation(node: function.declaration, source: source),
-        declaration: function.declaration,
-        metrics: metrics,
+      final sourceLinesOfCodeVisitor = SourceCodeVisitor(source.lineInfo);
+
+      function.declaration.visitChildren(sourceLinesOfCodeVisitor);
+
+      final sourceLinesOfCode = MetricValue<int>(
+        metricsId: SourceLinesOfCodeMetric.metricId,
+        documentation: const MetricDocumentation(
+          name: '',
+          shortName: '',
+          brief: '',
+          measuredType: EntityType.methodEntity,
+          examples: [],
+        ),
+        value: sourceLinesOfCodeVisitor.linesWithCode.length,
+        level: valueLevel(
+          sourceLinesOfCodeVisitor.linesWithCode.length,
+          readThreshold<int>(
+            config.metricsConfig,
+            SourceLinesOfCodeMetric.metricId,
+            50,
+          ),
+        ),
+        comment: '',
       );
+
+      final halsteadVolumeAstVisitor = HalsteadVolumeAstVisitor();
+
+      function.declaration.visitChildren(halsteadVolumeAstVisitor);
+
+      // Total number of occurrences of operators.
+      final totalNumberOfOccurrencesOfOperators =
+          sum(halsteadVolumeAstVisitor.operators.values);
+
+      // Total number of occurrences of operands
+      final totalNumberOfOccurrencesOfOperands =
+          sum(halsteadVolumeAstVisitor.operands.values);
+
+      // Number of distinct operators.
+      final numberOfDistinctOperators =
+          halsteadVolumeAstVisitor.operators.keys.length;
+
+      // Number of distinct operands.
+      final numberOfDistinctOperands =
+          halsteadVolumeAstVisitor.operands.keys.length;
+
+      // Halstead Program Length – The total number of operator occurrences and the total number of operand occurrences.
+      final halsteadProgramLength = totalNumberOfOccurrencesOfOperators +
+          totalNumberOfOccurrencesOfOperands;
+
+      // Halstead Vocabulary – The total number of unique operator and unique operand occurrences.
+      final halsteadVocabulary =
+          numberOfDistinctOperators + numberOfDistinctOperands;
+
+      // Program Volume – Proportional to program size, represents the size, in bits, of space necessary for storing the program. This parameter is dependent on specific algorithm implementation.
+      final halsteadVolume =
+          halsteadProgramLength * log2(max(1, halsteadVocabulary));
+
+      final maintainabilityIndex = max(
+        0,
+        (171 -
+                5.2 * log(max(1, halsteadVolume)) -
+                cyclomatic.value * 0.23 -
+                16.2 * log(max(1, sourceLinesOfCode.value))) *
+            100 /
+            171,
+      ).toDouble();
+
+      final report = Report(
+        location: nodeLocation(
+          node: function.declaration,
+          source: source,
+        ),
+        declaration: function.declaration,
+        metrics: [
+          for (final metric in config.methodsMetrics)
+            if (metric.supports(
+              function.declaration,
+              visitor.classes,
+              visitor.functions,
+              source,
+            ))
+              metric.compute(
+                function.declaration,
+                visitor.classes,
+                visitor.functions,
+                source,
+              ),
+          MetricValue<double>(
+            metricsId: 'maintainability-index',
+            documentation: const MetricDocumentation(
+              name: '',
+              shortName: '',
+              brief: '',
+              measuredType: EntityType.classEntity,
+              examples: [],
+            ),
+            value: maintainabilityIndex,
+            level: _maintainabilityIndexViolationLevel(
+              maintainabilityIndex,
+            ),
+            comment: '',
+          ),
+        ],
+      );
+
+      functionRecords[function] = report;
     }
 
     return functionRecords;
   }
 
-  bool _isSupported(FileResult result) =>
-      result.path.endsWith('.dart') && !result.path.endsWith('.g.dart');
+  MetricValueLevel _maintainabilityIndexViolationLevel(double index) {
+    if (index < 10) {
+      return MetricValueLevel.alarm;
+    } else if (index < 20) {
+      return MetricValueLevel.warning;
+    } else if (index < 40) {
+      return MetricValueLevel.noted;
+    }
+
+    return MetricValueLevel.none;
+  }
+
+  bool _isSupported(AnalysisResult result) =>
+      result.path != null &&
+      result.path!.endsWith('.dart') &&
+      !result.path!.endsWith('.g.dart');
 }

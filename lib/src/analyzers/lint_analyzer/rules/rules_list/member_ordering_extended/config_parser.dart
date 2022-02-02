@@ -1,5 +1,6 @@
-part of 'member_ordering_extended_rule.dart';
+part of 'member_ordering_extended.dart';
 
+// ignore: avoid_classes_with_only_static_members
 class _ConfigParser {
   static const _defaultOrderList = [
     'public-fields',
@@ -29,10 +30,6 @@ class _ConfigParser {
   static bool parseAlphabetize(Map<String, Object> config) =>
       (config['alphabetize'] as bool?) ?? false;
 
-  static bool parseAlphabetizeByType(Map<String, Object> config) =>
-      (config['alphabetize-by-type'] as bool?) ?? false;
-
-  // ignore: long-method
   static _MemberGroup? _parseGroup(String group) {
     final lastGroup = group.endsWith('getters-setters')
         ? 'getters-setters'

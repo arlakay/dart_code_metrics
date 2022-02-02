@@ -1,4 +1,4 @@
-part of 'component_annotation_arguments_ordering_rule.dart';
+part of 'component_annotation_arguments_ordering.dart';
 
 class _ConfigParser {
   static const _orderConfig = 'order';

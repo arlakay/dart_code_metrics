@@ -1,4 +1,4 @@
-part of 'avoid_late_keyword_rule.dart';
+part of 'avoid_late_keyword.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _declarations = <AstNode>[];

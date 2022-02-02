@@ -1,5 +1,3 @@
-// ignore_for_file: public_member_api_docs
-
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -7,9 +5,8 @@ import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
-import '../exceptions/invalid_argument_exception.dart';
+import '../exceptions/arguments_validation_exceptions.dart';
 import '../models/flag_names.dart';
-import '../utils/detect_sdk_path.dart';
 
 abstract class BaseCommand extends Command<void> {
   @override
@@ -22,16 +19,16 @@ abstract class BaseCommand extends Command<void> {
   }
 
   @override
+  CommandRunner get runner => super.runner as CommandRunner;
+
+  @override
   Future<void> run() => _verifyThenRunCommand();
 
   @protected
-  Future<void> runCommand();
+  void validateCommand();
 
-  void validateCommand() {
-    validateRootFolderExist();
-    validateSdkPath();
-    validateTargetDirectories();
-  }
+  @protected
+  Future<void> runCommand();
 
   void usesRootFolderOption() {
     argParser
@@ -42,15 +39,6 @@ abstract class BaseCommand extends Command<void> {
         valueHelp: './',
         defaultsTo: Directory.current.path,
       );
-  }
-
-  void usesSdkPathOption() {
-    argParser.addOption(
-      FlagNames.sdkPath,
-      help:
-          'Dart SDK directory path. Should be provided only when you run the application as compiled executable(https://dart.dev/tools/dart-compile#exe) and automatic Dart SDK path detection fails.',
-      valueHelp: 'directory-path',
-    );
   }
 
   void usesExcludeOption() {
@@ -67,16 +55,6 @@ abstract class BaseCommand extends Command<void> {
     if (!Directory(rootFolderPath).existsSync()) {
       final _exceptionMessage =
           'Root folder $rootFolderPath does not exist or not a directory.';
-
-      throw InvalidArgumentException(_exceptionMessage);
-    }
-  }
-
-  void validateSdkPath() {
-    final sdkPath = argResults[FlagNames.sdkPath] as String?;
-    if (sdkPath != null && !Directory(sdkPath).existsSync()) {
-      final _exceptionMessage =
-          'Dart SDK path $sdkPath does not exist or not a directory.';
 
       throw InvalidArgumentException(_exceptionMessage);
     }
@@ -101,32 +79,6 @@ abstract class BaseCommand extends Command<void> {
         throw InvalidArgumentException(_exceptionMessage);
       }
     }
-  }
-
-  void addCommonFlags() {
-    usesRootFolderOption();
-    usesSdkPathOption();
-    usesExcludeOption();
-    _congratulateFlag();
-  }
-
-  String? findSdkPath() =>
-      argResults[FlagNames.sdkPath] as String? ??
-      detectSdkPath(
-        Platform.executable,
-        Platform.environment,
-        platformIsWindows: Platform.isWindows,
-      );
-
-  void _congratulateFlag() {
-    argParser
-      ..addSeparator('')
-      ..addFlag(
-        FlagNames.noCongratulate,
-        help: "Don't show output even when there are no issues.",
-        negatable: false,
-        defaultsTo: false,
-      );
   }
 
   Future<void> _verifyThenRunCommand() async {

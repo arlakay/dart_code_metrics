@@ -3,7 +3,7 @@ import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/ast/token.dart';
 
 import '../../../../../utils/node_utils.dart';
-import '../../../../../utils/string_extensions.dart';
+import '../../../../../utils/string_extension.dart';
 import '../../../models/context_message.dart';
 import '../../../models/entity_type.dart';
 import '../../../models/internal_resolved_unit_result.dart';
@@ -13,14 +13,14 @@ import '../../metric_utils.dart';
 import '../../models/function_metric.dart';
 import '../../models/metric_computation_result.dart';
 import '../../models/metric_documentation.dart';
-import '../../models/metric_value.dart';
 import 'cyclomatic_complexity_flow_visitor.dart';
 
 const _documentation = MetricDocumentation(
   name: 'Cyclomatic Complexity',
   shortName: 'CYCLO',
+  brief: 'The number of linearly-independent paths through a code block',
   measuredType: EntityType.methodEntity,
-  recomendedThreshold: 20,
+  examples: [],
 );
 
 /// Cyclomatic Complexity (CYCLO)
@@ -35,17 +35,16 @@ class CyclomaticComplexityMetric extends FunctionMetric<int> {
       : super(
           id: metricId,
           documentation: _documentation,
-          threshold: readNullableThreshold<int>(config, metricId),
+          threshold: readThreshold<int>(config, metricId, 20),
           levelComputer: valueLevel,
         );
 
   @override
   MetricComputationResult<int> computeImplementation(
-    AstNode node,
+    Declaration node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
-    Iterable<MetricValue<num>> otherMetricsValues,
   ) {
     final visitor = CyclomaticComplexityFlowVisitor();
     node.visitChildren(visitor);
@@ -57,8 +56,8 @@ class CyclomaticComplexityMetric extends FunctionMetric<int> {
   }
 
   @override
-  String commentMessage(String nodeType, int value, int? threshold) {
-    final exceeds = threshold != null && value > threshold
+  String commentMessage(String nodeType, int value, int threshold) {
+    final exceeds = value > threshold
         ? ', which exceeds the maximum of $threshold allowed'
         : '';
 

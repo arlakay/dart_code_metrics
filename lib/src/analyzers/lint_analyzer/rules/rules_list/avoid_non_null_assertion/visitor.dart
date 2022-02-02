@@ -1,4 +1,4 @@
-part of 'avoid_non_null_assertion_rule.dart';
+part of 'avoid_non_null_assertion.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _expressions = <Expression>[];

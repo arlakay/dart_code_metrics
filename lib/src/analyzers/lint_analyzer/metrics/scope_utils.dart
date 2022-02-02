@@ -4,7 +4,7 @@ import '../models/scoped_function_declaration.dart';
 
 /// Returns functions belonging to the passed [classNode]
 Iterable<ScopedFunctionDeclaration> classMethods(
-  AstNode? classNode,
+  Declaration? classNode,
   Iterable<ScopedFunctionDeclaration> functionDeclarations,
 ) =>
     functionDeclarations

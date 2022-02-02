@@ -4,18 +4,11 @@ import '../../../../../reporters/models/console_reporter.dart';
 import '../../../metrics/metric_utils.dart';
 import '../../../metrics/models/metric_value.dart';
 import '../../../metrics/models/metric_value_level.dart';
-import '../../../models/issue.dart';
 import '../../../models/lint_file_report.dart';
-import '../../../models/report.dart';
-import '../../../models/summary_lint_report_record.dart';
-import '../../lint_report_params.dart';
+import '../../utility_selector.dart';
 import 'lint_console_reporter_helper.dart';
 
-/// Lint console reporter.
-///
-/// Use it to create reports in console format.
-class LintConsoleReporter extends ConsoleReporter<LintFileReport,
-    SummaryLintReportRecord<Object>, LintReportParams> {
+class LintConsoleReporter extends ConsoleReporter<LintFileReport> {
   /// If true will report info about all files even if they're not above warning threshold
   final bool reportAll;
 
@@ -24,67 +17,101 @@ class LintConsoleReporter extends ConsoleReporter<LintFileReport,
   LintConsoleReporter(IOSink output, {this.reportAll = false}) : super(output);
 
   @override
-  Future<void> report(
-    Iterable<LintFileReport> records, {
-    Iterable<SummaryLintReportRecord<Object>> summary = const [],
-    LintReportParams? additionalParams,
-  }) async {
-    var hasReportData = false;
+  Future<void> report(Iterable<LintFileReport> records) async {
+    if (records.isEmpty) {
+      return;
+    }
 
-    for (final file in records) {
+    for (final analysisRecord in records) {
       final lines = [
-        ..._reportMetrics('', file.file),
-        ..._reportIssues(
-          [...file.issues, ...file.antiPatternCases],
-          file.relativePath,
-        ),
-        ..._reportEntityMetrics({...file.classes, ...file.functions}),
+        ..._reportClassMetrics(analysisRecord),
+        ..._reportFunctionMetrics(analysisRecord),
       ];
 
+      for (final antiPattern in analysisRecord.antiPatternCases) {
+        final severity = _helper.getSeverityForAntiPattern();
+
+        lines.add(_helper.getIssueMessage(antiPattern, severity));
+      }
+
+      for (final issue in analysisRecord.issues) {
+        final severity = _helper.getSeverity(issue.severity);
+
+        lines.add(_helper.getIssueMessage(issue, severity));
+      }
+
       if (lines.isNotEmpty) {
-        output.writeln('${file.relativePath}:');
+        output.writeln('${analysisRecord.relativePath}:');
         lines.forEach(output.writeln);
         output.writeln('');
       }
-
-      hasReportData |= lines.isNotEmpty;
     }
+  }
 
-    if (!hasReportData) {
-      if (additionalParams?.congratulate ?? true) {
-        output.writeln('${okPen('✔')} no issues found!');
+  Iterable<String> _reportClassMetrics(LintFileReport record) {
+    final lines = <String>[];
+
+    record.classes.forEach((source, classMetricReport) {
+      final report = UtilitySelector.classMetricsReport(classMetricReport);
+      final violationLevel = UtilitySelector.classMetricViolationLevel(report);
+
+      if (reportAll || isReportLevel(violationLevel)) {
+        final violations = [
+          if (reportAll || _isNeedToReport(report.methodsCount))
+            _helper.getMetricReport(report.methodsCount, 'number of methods'),
+        ];
+
+        lines.add(_helper.getMetricMessage(violationLevel, source, violations));
       }
-    }
+    });
+
+    return lines;
   }
 
-  Iterable<String> _reportIssues(Iterable<Issue> issues, String relativePath) =>
-      (issues.toList()
-            ..sort((a, b) =>
-                a.location.start.offset.compareTo(b.location.start.offset)))
-          .map((issue) => _helper.getIssueMessage(issue, relativePath))
-          .expand((lines) => lines);
+  Iterable<String> _reportFunctionMetrics(LintFileReport record) {
+    final lines = <String>[];
 
-  Iterable<String> _reportEntityMetrics(Map<String, Report> reports) =>
-      (reports.entries.toList()
-            ..sort((a, b) => a.value.location.start.offset
-                .compareTo(b.value.location.start.offset)))
-          .expand((entry) => _reportMetrics(entry.key, entry.value));
+    record.functions.forEach((source, functionReport) {
+      final report = UtilitySelector.functionMetricsReport(functionReport);
+      final violationLevel =
+          UtilitySelector.functionMetricViolationLevel(report);
 
-  Iterable<String> _reportMetrics(String source, Report report) {
-    final reportLevel = report.metricsLevel;
-    if (reportAll || isReportLevel(reportLevel)) {
-      final violations = [
-        for (final metric in report.metrics)
-          if (reportAll || _isNeedToReport(metric))
-            _helper.getMetricReport(metric),
-      ];
+      if (reportAll || isReportLevel(violationLevel)) {
+        final violations = [
+          if (reportAll || _isNeedToReport(report.cyclomaticComplexity))
+            _helper.getMetricReport(
+              report.cyclomaticComplexity,
+              'cyclomatic complexity',
+            ),
+          if (reportAll || _isNeedToReport(report.sourceLinesOfCode))
+            _helper.getMetricReport(
+              report.sourceLinesOfCode,
+              'source lines of code',
+            ),
+          if (reportAll || _isNeedToReport(report.maintainabilityIndex))
+            _helper.getMetricReport(
+              report.maintainabilityIndex,
+              'maintainability index',
+            ),
+          if (reportAll || _isNeedToReport(report.argumentsCount))
+            _helper.getMetricReport(
+              report.argumentsCount,
+              'number of arguments',
+            ),
+          if (reportAll || _isNeedToReport(report.maximumNestingLevel))
+            _helper.getMetricReport(
+              report.maximumNestingLevel,
+              'nesting level',
+            ),
+        ];
 
-      return _helper.getMetricMessage(reportLevel, source, violations);
-    }
+        lines.add(_helper.getMetricMessage(violationLevel, source, violations));
+      }
+    });
 
-    return [];
+    return lines;
   }
 
-  bool _isNeedToReport(MetricValue<Object> metric) =>
-      metric.level > MetricValueLevel.none;
+  bool _isNeedToReport(MetricValue metric) =>
+      metric.level != MetricValueLevel.none;
 }

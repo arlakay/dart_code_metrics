@@ -1,19 +1,5 @@
 # Contribution guide
 
-## Opening a Pull Request
-
-Our team uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when coding and creating PRs. This standard makes it easy for our team to review and identify commits in our repo quickly.
-
-PR titles should follow the format below:
-
-```jsx
-<type>(optional scope): <description>
-```
-
-1. **fix:** a commit of the *type* `fix` patches a bug in the codebase.
-2. **feat:** a commit of the *type* `feat` introduces a new feature to the codebase.
-3. *types* other than `fix:` and `feat:` are allowed, for example **[@commitlint/config-conventional](https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional)** (based on the **[the Angular convention](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)**) recommends `build:`, `chore:`, `ci:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, and others.
-
 ## Creating new lint rule
 
 To create a new rule:
@@ -21,7 +7,7 @@ To create a new rule:
 1. Choose a rule name according to our naming guide or take it from existing issue for the rule.
 2. Add an `.md` file with the rule documentation to `doc/rules`. If the rule supports configuration add ![Configurable](https://img.shields.io/badge/-configurable-informational) badge, if it has auto-fixes add ![Has auto-fix](https://img.shields.io/badge/-has%20auto--fix-success) badge
 3. Create a rule `.dart` file under `lib/src/analyzers/lint_analyzer/rules/rules_list`.
-4. Create a class that extends an abstract rule class depending on your rule type. Available classes: `FlutterRule`, `CommonRule`, `IntlRule`, `AngularRule`. Add a public field with rule id, documentation url.
+4. Create a class that extends `Rule`. Add a public field with rule id, documentation url.
 
     The class constructor should take `Map<String, Object> config` parameter which represents config that is passed to the rule from the `analysis_options.yaml`. Example:
 
@@ -89,10 +75,10 @@ To set this up:
     ```yaml
     name: dart_code_metrics_plugin_loader
     description: This pubspec determines the version of the analyzer plugin to load.
-    version: 4.10.1
+    version: 4.0.0
 
     environment:
-      sdk: ">=2.14.0 <3.0.0"
+      sdk: '>=2.12.0 <3.0.0'
 
     dependencies:
       dart_code_metrics:
@@ -105,5 +91,4 @@ To set this up:
    - `tools\analyzer_plugin` directory in `dart_code_metrics` working copy
    - your project directory
 5. For Visual Studio Code on Windows: delete `C:\Users\<your-windows-user-name>\AppData\Local\.dartServer` folder.
-   For Android Studio on macOS: delete `/Users/<your-macOS-user-name>/.dartServer` folder.
 6. Start / restart your IDE

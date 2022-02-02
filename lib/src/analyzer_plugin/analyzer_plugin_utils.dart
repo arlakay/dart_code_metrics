@@ -3,7 +3,7 @@ import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
 import 'package:source_span/source_span.dart';
 
-import '../analyzers/lint_analyzer/lint_analysis_config.dart';
+import '../analyzers/lint_analyzer/lint_config.dart';
 import '../analyzers/lint_analyzer/models/issue.dart';
 import '../analyzers/lint_analyzer/models/severity.dart';
 import '../config_builder/models/deprecated_option.dart';
@@ -25,8 +25,8 @@ plugin.AnalysisErrorFixes codeIssueToAnalysisErrorFixes(
         issue.location.length,
         issue.location.start.line,
         issue.location.start.column,
-        endLine: issue.location.end.line,
-        endColumn: issue.location.end.column,
+        issue.location.end.line,
+        issue.location.end.column,
       ),
       issue.message,
       issue.ruleId,
@@ -43,8 +43,7 @@ plugin.AnalysisErrorFixes codeIssueToAnalysisErrorFixes(
           plugin.SourceChange(issue.suggestion!.comment, edits: [
             plugin.SourceFileEdit(
               fileWithIssue,
-              // based on discussion https://groups.google.com/a/dartlang.org/g/analyzer-discuss/c/lfRzX0yw3ZU
-              unitResult.exists ? 0 : -1,
+              unitResult.libraryElement.source.modificationStamp,
               edits: [
                 plugin.SourceEdit(
                   issue.location.start.offset,
@@ -58,6 +57,26 @@ plugin.AnalysisErrorFixes codeIssueToAnalysisErrorFixes(
     ],
   );
 }
+
+plugin.AnalysisErrorFixes designIssueToAnalysisErrorFixes(Issue issue) =>
+    plugin.AnalysisErrorFixes(plugin.AnalysisError(
+      plugin.AnalysisErrorSeverity.INFO,
+      plugin.AnalysisErrorType.HINT,
+      plugin.Location(
+        uriToPath(issue.location.sourceUrl) ?? '',
+        issue.location.start.offset,
+        issue.location.length,
+        issue.location.start.line,
+        issue.location.start.column,
+        issue.location.end.line,
+        issue.location.end.column,
+      ),
+      issue.message,
+      issue.ruleId,
+      correction: issue.verboseMessage,
+      url: issue.documentation.toString(),
+      hasFix: false,
+    ));
 
 plugin.AnalysisErrorFixes metricReportToAnalysisErrorFixes(
   SourceLocation startLocation,
@@ -74,8 +93,8 @@ plugin.AnalysisErrorFixes metricReportToAnalysisErrorFixes(
         length,
         startLocation.line,
         startLocation.column,
-        endLine: startLocation.line,
-        endColumn: startLocation.column,
+        startLocation.line,
+        startLocation.column,
       ),
       message,
       metricId,
@@ -83,7 +102,7 @@ plugin.AnalysisErrorFixes metricReportToAnalysisErrorFixes(
     ));
 
 Iterable<plugin.AnalysisErrorFixes> checkConfigDeprecatedOptions(
-  LintAnalysisConfig config,
+  LintConfig config,
   Iterable<DeprecatedOption> deprecatedOptions,
   String analysisOptionPath,
 ) {

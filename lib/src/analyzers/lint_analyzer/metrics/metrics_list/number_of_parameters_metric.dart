@@ -1,5 +1,4 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:collection/collection.dart';
 
 import '../../models/entity_type.dart';
 import '../../models/internal_resolved_unit_result.dart';
@@ -9,13 +8,13 @@ import '../metric_utils.dart';
 import '../models/function_metric.dart';
 import '../models/metric_computation_result.dart';
 import '../models/metric_documentation.dart';
-import '../models/metric_value.dart';
 
 const _documentation = MetricDocumentation(
   name: 'Number of Parameters',
   shortName: 'NOP',
+  brief: 'Number of parameters received by a method',
   measuredType: EntityType.methodEntity,
-  recomendedThreshold: 4,
+  examples: [],
 );
 
 /// Number of Parameters (NOP)
@@ -29,45 +28,18 @@ class NumberOfParametersMetric extends FunctionMetric<int> {
       : super(
           id: metricId,
           documentation: _documentation,
-          threshold: readNullableThreshold<int>(config, metricId),
+          threshold: readThreshold<int>(config, metricId, 4),
           levelComputer: valueLevel,
         );
 
   @override
-  bool supports(
-    AstNode node,
-    Iterable<ScopedClassDeclaration> classDeclarations,
-    Iterable<ScopedFunctionDeclaration> functionDeclarations,
-    InternalResolvedUnitResult source,
-    Iterable<MetricValue<Object>> otherMetricsValues,
-  ) {
-    if (node is FunctionDeclaration) {
-      return true;
-    } else if (node is MethodDeclaration) {
-      final className = functionDeclarations
-          .firstWhereOrNull((declaration) => declaration.declaration == node)
-          ?.enclosingDeclaration
-          ?.name;
-
-      return node.name.name != 'copyWith' ||
-          className == null ||
-          className !=
-              node.returnType?.type?.getDisplayString(withNullability: true);
-    }
-
-    return false;
-  }
-
-  @override
   MetricComputationResult<int> computeImplementation(
-    AstNode node,
+    Declaration node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
-    Iterable<MetricValue<num>> otherMetricsValues,
   ) {
     int? parametersCount;
-
     if (node is FunctionDeclaration) {
       parametersCount = node.functionExpression.parameters?.parameters.length;
     } else if (node is MethodDeclaration) {
@@ -78,10 +50,9 @@ class NumberOfParametersMetric extends FunctionMetric<int> {
   }
 
   @override
-  String commentMessage(String nodeType, int value, int? threshold) {
-    final exceeds = threshold != null && value > threshold
-        ? ', exceeds the maximum of $threshold allowed'
-        : '';
+  String commentMessage(String nodeType, int value, int threshold) {
+    final exceeds =
+        value > threshold ? ', exceeds the maximum of $threshold allowed' : '';
     final parameters = '$value ${value == 1 ? 'parameter' : 'parameters'}';
 
     return 'This $nodeType has $parameters$exceeds.';

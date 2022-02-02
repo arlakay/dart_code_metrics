@@ -1,4 +1,4 @@
-part of 'no_magic_number_rule.dart';
+part of 'no_magic_number.dart';
 
 class _ConfigParser {
   static const _allowedConfigName = 'allowed';
