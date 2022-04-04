@@ -1,6 +1,3 @@
-# Koyal
-See README.md in /lib/koyal_rules
-
 [![Build Status](https://shields.io/github/workflow/status/dart-code-checker/dart-code-metrics/build?logo=github&logoColor=white)](https://github.com/dart-code-checker/dart-code-metrics/)
 [![Coverage Status](https://img.shields.io/codecov/c/github/dart-code-checker/dart-code-metrics?logo=codecov&logoColor=white)](https://codecov.io/gh/dart-code-checker/dart-code-metrics/)
 [![Pub Version](https://img.shields.io/pub/v/dart_code_metrics?logo=dart&logoColor=white)](https://pub.dev/packages/dart_code_metrics/)
@@ -9,25 +6,37 @@ See README.md in /lib/koyal_rules
 [![Pub popularity](https://badgen.net/pub/popularity/dart_code_metrics)](https://pub.dev/packages/dart_code_metrics/score)
 [![GitHub popularity](https://img.shields.io/github/stars/dart-code-checker/dart-code-metrics?logo=github&logoColor=white)](https://github.com/dart-code-checker/dart-code-metrics/stargazers)
 
+<img
+  src="https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/logo.svg"
+  alt="Dart Code Metrics logo"
+  height="150" width="150"
+  align="right">
+
 # Dart Code Metrics
 
-[Configuration](#configuration) |
-[Rules](#rules) |
-[Metrics](#metrics) |
-[Anti-patterns](#anti-patterns)
+**Note: you can find [the full documentation on the website](https://dartcodemetrics.dev/docs/getting-started/introduction)**
 
+[Configuration](https://dartcodemetrics.dev/docs/getting-started/configuration) |
+[Rules](https://dartcodemetrics.dev/docs/rules/overview) |
+[Metrics](https://dartcodemetrics.dev/docs/metrics/overview) |
+[Anti-patterns](https://dartcodemetrics.dev/docs/anti-patterns/overivew)
+
+<a href="https://flutter.dev/docs/development/packages-and-plugins/favorites">
 <img
-  src="https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/doc/.assets/logo.svg"
-  alt="Dart Code Metrics logo"
-  height="120" width="120"
+  src="https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/flutter-favorite-badge-1200px.png"
+  alt="Flutter Favorite Badge"
+  height="140" width="140"
   align="right">
+</a>
 
 Dart Code Metrics is a static analysis tool that helps you analyse and improve your code quality.
 
-- Reports [code metrics](#metrics)
-- Provides [additional rules](#rules) for the dart analyzer
-- Checks for [anti-patterns](#anti-patterns)
-- Can be used as [CLI](#cli), [analyzer plugin](#analyzer-plugin) or [library](#library)
+- Reports [code metrics](https://dartcodemetrics.dev/docs/metrics/overview)
+- Provides [additional rules](https://dartcodemetrics.dev/docs/rules/overview) for the dart analyzer
+- Checks for [anti-patterns](https://dartcodemetrics.dev/docs/anti-patterns/overview)
+- Checks [unused `*.dart` files](https://dartcodemetrics.dev/docs/cli/check-unused-files)
+- Checks [unused l10n](https://dartcodemetrics.dev/docs/cli/check-unused-l10n)
+- Can be used as [CLI](https://dartcodemetrics.dev/docs/cli/overview), [analyzer plugin](https://dartcodemetrics.dev/docs/analyzer-plugin) or [library](https://dartcodemetrics.dev/docs/getting-started/installation#library)
 
 ## Links
 
@@ -35,175 +44,47 @@ Dart Code Metrics is a static analysis tool that helps you analyse and improve y
 - To contribute, please read [CONTRIBUTING.md](./CONTRIBUTING.md) first.
 - Please [open an issue](https://github.com/dart-code-checker/dart-code-metrics/issues/new?assignees=dkrutskikh&labels=question&template=question.md&title=%5BQuestion%5D+) if anything is missing or unclear in this documentation.
 
-## Usage
-
-### Analyzer plugin
-
-A plugin for the Dart `analyzer` [package](https://pub.dev/packages/analyzer) providing additional rules from Dart Code Metrics. All issues produced by rules or anti-patterns will be highlighted in IDE.
-
-1. Install package as a dev dependency
-
-    ```sh
-    $ dart pub add --dev dart_code_metrics
-    
-    # or for a Flutter package
-    $ flutter pub add --dev dart_code_metrics
-    ```
-
-    **OR**
-
-    add it manually to `pubspec.yaml`
-
-    ```yaml
-    dev_dependencies:
-      dart_code_metrics: ^4.0.0
-    ```
-
-    and then run
-
-    ```sh
-    $ dart pub get
-    
-    # or for a Flutter package
-    $ flutter pub get
-    ```
-
-2. Add configuration to `analysis_options.yaml`
-
-    ```yaml
-    analyzer:
-      plugins:
-        - dart_code_metrics
-
-    dart_code_metrics:
-      anti-patterns:
-        - long-method
-        - long-parameter-list
-      metrics:
-        cyclomatic-complexity: 20
-        maximum-nesting-level: 5
-        number-of-parameters: 4
-        source-lines-of-code: 50
-      metrics-exclude:
-        - test/**
-      rules:
-        - newline-before-return
-        - no-boolean-literal-compare
-        - no-empty-block
-        - prefer-trailing-comma
-        - prefer-conditional-expressions
-        - no-equal-then-else
-    ```
-
-3. Reload IDE to allow the analyzer to discover the plugin
-
-### CLI
-
-The package can be used as a command-line tool.
-It will produce a result in one of the supported formats:
-
-- Plain terminal
-- [GitHub](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/reporters/github-reporter.md)
-- Codeclimate
-- HTML
-- [JSON](./doc/reporters/json.md)
-
-#### Basic usage
-
-Install the package as listed in the [Analyzer plugin usage example](#analyzer-plugin).
-
-If you want the command-line tool to check rules, you [should configure](#configuring-a-rules-entry) `rules` entry in the `analysis_options.yaml` first.
+## Installation
 
 ```sh
-dart pub run dart_code_metrics:metrics lib
+$ dart pub add --dev dart_code_metrics
 
 # or for a Flutter package
-flutter pub run dart_code_metrics:metrics lib
+$ flutter pub add --dev dart_code_metrics
 ```
 
-#### Global usage
+**OR**
+
+add it manually to `pubspec.yaml`
+
+```yaml
+dev_dependencies:
+  dart_code_metrics: ^4.10.1
+```
+
+and then run
 
 ```sh
-dart pub global activate dart_code_metrics
-dart pub global run dart_code_metrics:metrics lib
+$ dart pub get
 
 # or for a Flutter package
-flutter pub global activate dart_code_metrics
-flutter pub global run dart_code_metrics:metrics lib
+$ flutter pub get
 ```
 
-#### Options
+## Basic configuration
 
-```text
-Usage: metrics [arguments...] <directories>
-
--h, --help                                        Print this usage information.
-
-
--r, --reporter=<console>                          The format of the output of the analysis
-                                                  [console (default), console-verbose, codeclimate, github, gitlab, html, json]
--o, --output-directory=<OUTPUT>                   Write HTML output to OUTPUT
-                                                  (defaults to "metrics")
-
-
-    --cyclomatic-complexity=<20>                  Cyclomatic Complexity threshold
-    --lines-of-code=<100>                         Lines of Code threshold
-    --maximum-nesting-level=<5>                   Maximum Nesting Level threshold
-    --number-of-methods=<10>                      Number of Methods threshold
-    --number-of-parameters=<4>                    Number of Parameters threshold
-    --source-lines-of-code=<50>                   Source lines of Code threshold
-    --weight-of-class=<0.33>                      Weight Of a Class threshold
-
-
-    --root-folder=<./>                            Root folder
-                                                  (defaults to current directory)
-    --exclude=<{/**.g.dart,/**.template.dart}>    File paths in Glob syntax to be exclude
-                                                  (defaults to "{/**.g.dart,/**.template.dart}")
-
-
-    --set-exit-on-violation-level=<warning>       Set exit code 2 if code violations same or higher level than selected are detected
-                                                  [noted, warning, alarm]
-```
-
-### Library
-
-[See `example/example.dart`](https://github.com/dart-code-checker/dart-code-metrics/blob/master/example/example.dart).
-
-## Configuration
-
-To configure the package add the `dart_code_metrics` entry to the `analysis_options.yaml` and update plugins list of the analyzer.
+Add configuration to `analysis_options.yaml`
 
 ```yaml
-analyzer:
-  plugins:
-    - dart_code_metrics
-
-dart_code_metrics:
-  anti-patterns:
-    - ... # add this entry to configure the list of anti-patterns
-  metrics:
-      ... # add this entry to configure the list of reported metrics
-  metrics-exclude:
-    - ... # add this entry to configure the list of files that should be ignored by metrics
-  rules:
-    - ... # add this entry to configure the list of rules
-```
-
-Basic config example:
-
-```yaml
-analyzer:
-  plugins:
-    - dart_code_metrics
-
 dart_code_metrics:
   anti-patterns:
     - long-method
     - long-parameter-list
   metrics:
     cyclomatic-complexity: 20
-    number-of-arguments: 4
     maximum-nesting-level: 5
+    number-of-parameters: 4
+    source-lines-of-code: 50
   metrics-exclude:
     - test/**
   rules:
@@ -215,156 +96,136 @@ dart_code_metrics:
     - no-equal-then-else
 ```
 
-### Configuring a rules entry
+Reload IDE to allow the analyzer to discover the plugin config.
 
-To enable a rule add its id to the `rules` entry. All rules have severity which can be overridden with `severity` config entry. For example,
+You can read more about the configuration [on the website](https://dartcodemetrics.dev/docs/getting-started/configuration).
 
-```yaml
-dart_code_metrics:
-  rules:
-    - newline-before-return
-        severity: info
+## Usage
+
+### Analyzer plugin
+
+Dart Code Metrics can be used as a plugin for the Dart `analyzer` [package](https://pub.dev/packages/analyzer) providing additional rules. All issues produced by rules or anti-patterns will be highlighted in IDE.
+
+![Highlighted issue example](https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/plugin-example.png)
+
+Rules that marked with a `has auto-fix` badge have auto-fixes available through the IDE context menu. VS Code example:
+
+![VS Code example](https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/quick-fix.gif)
+
+### CLI
+
+The package can be used as CLI and supports multiple commands:
+
+| Command            | Example of use                                            | Short description                                         |
+| ------------------ | --------------------------------------------------------- | --------------------------------------------------------- |
+| analyze            | dart run dart_code_metrics:metrics analyze lib            | Reports code metrics, rules and anti-patterns violations. |
+| check-unused-files | dart run dart_code_metrics:metrics check-unused-files lib | Checks unused \*.dart files.                              |
+| check-unused-l10n  | dart run dart_code_metrics:metrics check-unused-l10n lib  | Check unused localization in \*.dart files.               |
+| check-unused-code  | dart run dart_code_metrics:metrics check-unused-code lib  | Checks unused code in \*.dart files.                      |
+
+For additional help on any of the commands, enter `dart run dart_code_metrics:metrics help <command>`
+
+**Note:** if you're setting up Dart Code Metrics for multi-package repository, check out [this website section](https://dartcodemetrics.dev/docs/cli/overview#multi-package-repositories-usage).
+
+#### Analyze
+
+Reports code metrics, rules and anti-patterns violations. To execute the command, run
+
+```sh
+$ dart run dart_code_metrics:metrics analyze lib
+
+# or for a Flutter package
+$ flutter pub run dart_code_metrics:metrics analyze lib
 ```
 
-will set severity to `info`. Available severity values: none, style, performance, warning, error.
+It will produce a result in one of the format:
 
-Rules with a `configurable` badge have additional configuration, check out their docs for more information.
+- Console
+- GitHub
+- Codeclimate
+- HTML
+- JSON
 
-### Configuring a metrics entry
+Console report example:
 
-To enable a metric add its id to the `metrics` entry in the `analysis_options.yaml`. All metrics can take a threshold value. If no value was provided, the default value will be used.
+![Console report example](https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/analyze-console-report.png)
 
-### Configuring a metrics-exclude entry
+#### Check unused files
 
-To exclude files from a metrics report provide a list of regular expressions for ignored files. For example:
+Checks unused `*.dart` files. To execute the command, run
 
-```yaml
-dart_code_metrics:
-  metrics-exclude:
-    - test/**
-    - lib/src/some_file.dart
+```sh
+$ dart run dart_code_metrics:metrics check-unused-files lib
+
+# or for a Flutter package
+$ flutter pub run dart_code_metrics:metrics check-unused-files lib
 ```
 
-### Configuring an anti-pattern entry
+It will produce a result in one of the format:
 
-To enable an anti-pattern add its id to the `anti-patterns` entry.
+- Console
+- JSON
 
-## Ignoring a rule or anti-pattern
+Console report example:
 
-If a specific rule or anti-pattern warning should be ignored, it can be flagged with a comment. For example,
+![Console report example](https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/unused-files-console-report.png)
+
+#### Check unused localization
+
+Checks unused Dart class members, that encapsulates the app’s localized values.
+
+An example of such class:
 
 ```dart
-// ignore: no-empty-block
-void emptyFunction() {}
+class ClassWithLocalization {
+  String get title {
+    return Intl.message(
+      'Hello World',
+      name: 'title',
+      desc: 'Title for the Demo application',
+      locale: localeName,
+    );
+  }
+}
 ```
 
-tells the analyzer to ignore this instance of the `no-empty-block` warning.
+To execute the command, run
 
-End-of-line comments are supported as well. The following communicates the same thing:
+```sh
+$ dart run dart_code_metrics:metrics check-unused-l10n lib
 
-```dart
-void emptyFunction() {} // ignore: no-empty-block
+# or for a Flutter package
+$ flutter pub run dart_code_metrics:metrics check-unused-l10n lib
 ```
 
-To ignore a rule for an entire file, use the `ignore_for_file` comment flag. For example,
+It will produce a result in one of the format:
 
-```dart
-// ignore_for_file: no-empty-block
-...
+- Console
+- JSON
 
-void emptyFunction() {}
+Console report example:
+
+![Console report example](https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/unused-l10n-console-report.png)
+
+#### Check unused code
+
+Checks unused code in `*.dart` files. To execute the command, run
+
+```sh
+$ dart run dart_code_metrics:metrics check-unused-code lib
+
+# or for a Flutter package
+$ flutter pub run dart_code_metrics:metrics check-unused-code lib
 ```
 
-tells the analyzer to ignore all occurrences of the kebab-case-types warning in this file.
+It will produce a result in one of the format:
 
-It's the same approach that the dart linter package [use](https://github.com/dart-lang/linter#usage).
+- Console
+- JSON
 
-Additionally, `exclude` entry for the analyzer config can be used to ignore files. For example,
+Console report example:
 
-```yaml
-analyzer:
-  exclude:
-    - example/**
-```
-
-will work both for the analyzer and for this plugin.
-
-If you want a specific rule to ignore files, you can configure `exclude` entry for it. For example,
-
-```yaml
-dart_code_metrics:
-  rules:
-    no-equal-arguments:
-      exclude:
-        - test/**
-```
-
-## Metrics
-
-Metrics configuration is [described here](#configuring-a-metrics-entry).
-
-Available metrics:
-
-- [Cyclomatic Complexity](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/metrics/cyclomatic-complexity.md)
-- [Lines of Code](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/metrics/lines-of-code.md)
-- [Maximum Nesting](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/metrics/maximum-nesting-level.md)
-- [Number of Methods](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/metrics/number-of-methods.md)
-- [Number of Parameters](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/metrics/number-of-parameters.md)
-- [Source lines of Code](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/metrics/source-lines-of-code.md)
-- [Weight of a Class](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/metrics/weight-of-class.md)
-
-## Rules
-
-Rules are grouped by a category to help you understand their purpose.
-
-Right now auto-fixes are available through an IDE context menu (ex. VS Code Quick Fix).
-
-Rules configuration is [described here](#configuring-a-rules-entry).
-
-### Common
-
-- [avoid-late-keyword](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-late-keyword.md)
-- [avoid-non-null-assertion](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-non-null-assertion.md)
-- [avoid-unused-parameters](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-unused-parameters.md)
-- [binary-expression-operand-order](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/binary-expression-operand-order.md) &nbsp; ![Has auto-fix](https://img.shields.io/badge/-has%20auto--fix-success)
-- [double-literal-format](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/double-literal-format.md) &nbsp; ![Has auto-fix](https://img.shields.io/badge/-has%20auto--fix-success)
-- [member-ordering](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/member-ordering.md) &nbsp; [![Configurable](https://img.shields.io/badge/-configurable-informational)](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/member-ordering.md#config-example)
-- [member-ordering-extended](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/member-ordering-extended.md) &nbsp; [![Configurable](https://img.shields.io/badge/-configurable-informational)](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/member-ordering-extended.md#config-example)
-- [newline-before-return](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/newline-before-return.md)
-- [no-boolean-literal-compare](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/no-boolean-literal-compare.md) &nbsp; ![Has auto-fix](https://img.shields.io/badge/-has%20auto--fix-success)
-- [no-empty-block](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/no-empty-block.md)
-- [no-equal-arguments](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/no-equal-arguments.md) &nbsp; ![Configurable](https://img.shields.io/badge/-configurable-informational)
-- [no-equal-then-else](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/no-equal-then-else.md)
-- [no-magic-number](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/no-magic-number.md) &nbsp; [![Configurable](https://img.shields.io/badge/-configurable-informational)](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/no-magic-number.md#config-example)
-- [no-object-declaration](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/no-object-declaration.md)
-- [prefer-conditional-expressions](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/prefer-conditional-expressions.md) &nbsp; ![Has auto-fix](https://img.shields.io/badge/-has%20auto--fix-success)
-- [prefer-trailing-comma](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/prefer-trailing-comma.md) &nbsp; [![Configurable](https://img.shields.io/badge/-configurable-informational)](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/prefer-trailing-comma.md#config-example) &nbsp; ![Has auto-fix](https://img.shields.io/badge/-has%20auto--fix-success)
-
-### Flutter specific
-
-- [always-remove-listener](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/always-remove-listener.md)
-- [avoid-returning-widgets](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-returning-widgets.md) &nbsp; [![Configurable](https://img.shields.io/badge/-configurable-informational)](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-returning-widgets.md#config-example)
-- [avoid-unnecessary-setstate](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-unnecessary-setstate.md)
-- [avoid-wrapping-in-padding](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-wrapping-in-padding.md)
-- [prefer-extracting-callbacks](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/prefer-extracting-callbacks.md) &nbsp; [![Configurable](https://img.shields.io/badge/-configurable-informational)](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/prefer-extracting-callbacks.md#config-example)
-
-### Intl specific
-
-- [prefer-intl-name](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/prefer-intl-name.md) &nbsp; ![Has auto-fix](https://img.shields.io/badge/-has%20auto--fix-success)
-- [provide-correct-intl-args](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/provide-correct-intl-args.md)
-
-### Angular specific
-
-- [avoid-preserve-whitespace-false](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/avoid-preserve-whitespace-false.md)
-- [component-annotation-arguments-ordering](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/component-annotation-arguments-ordering.md) &nbsp; [![Configurable](https://img.shields.io/badge/-configurable-informational)](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/component-annotation-arguments-ordering.md#config-example)
-- [prefer-on-push-cd-strategy](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/rules/prefer-on-push-cd-strategy.md)
-
-## Anti-patterns
-
-Like rules, anti-patterns display issues in IDE, except that their configuration is based on a `metrics` entry in the config.
-
-- [long-method](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/anti-patterns/long-method.md)
-- [long-parameter-list](https://github.com/dart-code-checker/dart-code-metrics/blob/master/doc/anti-patterns/long-parameter-list.md)
+![Console report example](https://raw.githubusercontent.com/dart-code-checker/dart-code-metrics/master/assets/unused-code-console-report.png)
 
 ## Troubleshooting
 
@@ -374,10 +235,25 @@ Please read [the following guide](./TROUBLESHOOTING.md) if the plugin is not wor
 
 If you are interested in contributing, please check out the [contribution guidelines](https://github.com/dart-code-checker/dart-code-metrics/blob/master/CONTRIBUTING.md). Feedback and contributions are welcome!
 
+## Articles
+
+### En
+
+- [Finding Unused Files With Dart Code Metrics](https://medium.com/wriketechclub/finding-unused-files-with-dart-code-metrics-b9aba48ad7ca) - This article considers one of the first commands, checking unused Dart files, by [Dmitry Zhifarsky](https://github.com/incendial)
+- [Improving Code Quality With Dart Code Metrics](https://medium.com/wriketechclub/improving-code-quality-with-dart-code-metrics-430a5e3e316d) -  Advantages of using Dart Code Metrics, by [Dmitry Zhifarsky](https://github.com/incendial)
+- [Creating a Custom Plugin for Dart Analyzer](https://medium.com/wriketechclub/creating-a-custom-plugin-for-dart-analyzer-48b76d81a239) -  How to develop a custom Dart code analyzer plugin, by [Dmitry Zhifarsky](https://github.com/incendial)
+- [Flutter Static Analysis, Dart Code Metrics](https://fredgrott.medium.com/flutter-static-analysis-dart-code-metrics-c9ec484f4e0f) -  How to install the dart_code-metrics plugin and effectively use it to analyze dart code, by [Fred Grott](https://github.com/fredgrott)
+
+### Ru
+
+- [Повышаем качество кода с Dart Code Metrics](https://habr.com/ru/company/wrike/blog/552012/) -  Преимущества использования Dart Code Metrics, от [Dmitry Zhifarsky](https://github.com/incendial)
+- [Как создать кастомный плагин для Dart-анализатора](https://habr.com/ru/company/wrike/blog/541672/) -  Описан процесс создания плагина для анализатора кода, от [Dmitry Zhifarsky](https://github.com/incendial)
+- [Dart Code Metrics — мой первый pull request](https://habr.com/ru/post/592131/) -  Инструкция по созданию нового правила, от [Vlad Konoshenko](https://github.com/Konoshenko)
+
 ## How to reach us
 
 Please feel free to ask any questions about this tool. Join our community [chat on Telegram](https://t.me/DartCodeMetrics). We speak both English and Russian.
 
-## LICENCE
+## LICENSE
 
 [MIT](./LICENSE)

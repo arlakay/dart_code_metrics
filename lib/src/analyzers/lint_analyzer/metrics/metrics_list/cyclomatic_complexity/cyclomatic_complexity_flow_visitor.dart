@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/ast/token.dart';
@@ -13,7 +15,7 @@ class CyclomaticComplexityFlowVisitor extends RecursiveAstVisitor<void> {
     TokenType.QUESTION_QUESTION_EQ,
   ];
 
-  final _complexityEntities = <SyntacticEntity>[];
+  final _complexityEntities = <SyntacticEntity>{};
 
   /// Returns an array of entities that increase cyclomatic complexity.
   Iterable<SyntacticEntity> get complexityEntities => _complexityEntities;

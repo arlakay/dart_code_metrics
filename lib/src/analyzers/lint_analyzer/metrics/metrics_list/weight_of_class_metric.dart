@@ -11,15 +11,14 @@ import '../metric_utils.dart';
 import '../models/class_metric.dart';
 import '../models/metric_computation_result.dart';
 import '../models/metric_documentation.dart';
+import '../models/metric_value.dart';
 import '../scope_utils.dart';
 
 const _documentation = MetricDocumentation(
   name: 'Weight Of a Class',
   shortName: 'WOC',
-  brief:
-      'The number of "functional" public methods divided by the total number of public members',
   measuredType: EntityType.classEntity,
-  examples: [],
+  recomendedThreshold: 0.33,
 );
 
 /// Weight Of a Class (WOC)
@@ -33,28 +32,36 @@ class WeightOfClassMetric extends ClassMetric<double> {
       : super(
           id: metricId,
           documentation: _documentation,
-          threshold: readThreshold<double>(config, metricId, 0.33),
+          threshold: readNullableThreshold<double>(config, metricId),
           levelComputer: invertValueLevel,
         );
 
   @override
   bool supports(
-    Declaration node,
+    AstNode node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
+    Iterable<MetricValue<Object>> otherMetricsValues,
   ) =>
-      super.supports(node, classDeclarations, functionDeclarations, source) &&
+      super.supports(
+        node,
+        classDeclarations,
+        functionDeclarations,
+        source,
+        otherMetricsValues,
+      ) &&
       classMethods(node, functionDeclarations)
           .where(_isPublicMethod)
           .isNotEmpty;
 
   @override
   MetricComputationResult<double> computeImplementation(
-    Declaration node,
+    AstNode node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
+    Iterable<MetricValue<num>> otherMetricsValues,
   ) {
     final totalPublicMethods = classMethods(node, functionDeclarations)
         .where(_isPublicMethod)
@@ -70,8 +77,8 @@ class WeightOfClassMetric extends ClassMetric<double> {
   }
 
   @override
-  String commentMessage(String nodeType, double value, double threshold) {
-    final exceeds = value < threshold
+  String commentMessage(String nodeType, double value, double? threshold) {
+    final exceeds = threshold != null && value < threshold
         ? ', which is lower then the threshold of $threshold allowed'
         : '';
 

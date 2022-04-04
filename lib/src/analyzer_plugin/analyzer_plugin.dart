@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'dart:async';
 
 import 'package:analyzer/dart/analysis/context_builder.dart';
@@ -12,25 +14,20 @@ import 'package:analyzer/src/dart/analysis/driver.dart';
 import 'package:analyzer/src/dart/analysis/driver_based_analysis_context.dart';
 import 'package:analyzer_plugin/plugin/plugin.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
-import 'package:source_span/source_span.dart';
 
+import '../analyzers/lint_analyzer/lint_analysis_config.dart';
 import '../analyzers/lint_analyzer/lint_analyzer.dart';
-import '../analyzers/lint_analyzer/lint_config.dart';
-import '../analyzers/lint_analyzer/metrics/metric_utils.dart';
-import '../analyzers/lint_analyzer/metrics/metrics_list/cyclomatic_complexity/cyclomatic_complexity_metric.dart';
 import '../analyzers/lint_analyzer/metrics/metrics_list/number_of_parameters_metric.dart';
-import '../analyzers/lint_analyzer/reporters/utility_selector.dart';
+import '../analyzers/lint_analyzer/metrics/metrics_list/source_lines_of_code/source_lines_of_code_metric.dart';
 import '../config_builder/config_builder.dart';
 import '../config_builder/models/analysis_options.dart';
 import '../utils/yaml_utils.dart';
 import 'analyzer_plugin_utils.dart';
 
-const _codeMetricsId = 'code-metrics';
-
-class MetricsAnalyzerPlugin extends ServerPlugin {
+class AnalyzerPlugin extends ServerPlugin {
   static const _analyzer = LintAnalyzer();
 
-  final _configs = <AnalysisDriverGeneric, LintConfig>{};
+  final _configs = <AnalysisDriverGeneric, LintAnalysisConfig>{};
 
   var _filesFromSetPriorityFilesRequest = <String>[];
 
@@ -47,7 +44,7 @@ class MetricsAnalyzerPlugin extends ServerPlugin {
   @override
   String get version => '1.0.0-alpha.0';
 
-  MetricsAnalyzerPlugin(ResourceProvider provider) : super(provider);
+  AnalyzerPlugin(ResourceProvider provider) : super(provider);
 
   @override
   void contentChanged(String path) {
@@ -102,7 +99,9 @@ class MetricsAnalyzerPlugin extends ServerPlugin {
     runZonedGuarded(
       () {
         dartDriver.results.listen((analysisResult) {
-          _processResult(dartDriver, analysisResult);
+          if (analysisResult is ResolvedUnitResult) {
+            _processResult(dartDriver, analysisResult);
+          }
         });
       },
       (e, stackTrace) {
@@ -143,6 +142,7 @@ class MetricsAnalyzerPlugin extends ServerPlugin {
   ) async {
     try {
       final driver = driverForPath(parameters.file) as AnalysisDriver;
+      // ignore: deprecated_member_use
       final analysisResult = await driver.getResult2(parameters.file);
 
       if (analysisResult is! ResolvedUnitResult) {
@@ -174,22 +174,19 @@ class MetricsAnalyzerPlugin extends ServerPlugin {
     ResolvedUnitResult analysisResult,
   ) {
     try {
-      final path = analysisResult.path;
-      if (analysisResult.unit != null &&
-          path != null &&
-          (driver.analysisContext?.contextRoot.isAnalyzed(path) ?? false)) {
+      if (driver.analysisContext?.contextRoot.isAnalyzed(analysisResult.path) ??
+          false) {
         final fixes = _check(driver, analysisResult);
 
         channel.sendNotification(
           plugin.AnalysisErrorsParams(
-            path,
+            analysisResult.path,
             fixes.map((fix) => fix.error).toList(),
           ).toNotification(),
         );
       } else {
         channel.sendNotification(
-          plugin.AnalysisErrorsParams(analysisResult.path!, [])
-              .toNotification(),
+          plugin.AnalysisErrorsParams(analysisResult.path, []).toNotification(),
         );
       }
     } on Exception catch (e, stackTrace) {
@@ -214,55 +211,9 @@ class MetricsAnalyzerPlugin extends ServerPlugin {
 
       if (report != null) {
         result.addAll([
-          ...report.issues
-              .map((issue) =>
-                  codeIssueToAnalysisErrorFixes(issue, analysisResult))
-              .toList(),
-          ...report.antiPatternCases
-              .map(designIssueToAnalysisErrorFixes)
-              .toList(),
-        ]);
-
-        report.functions.forEach((source, functionReport) {
-          final filePath = analysisResult.path;
-
-          final functionOffset = functionReport
-              .declaration.firstTokenAfterCommentAndMetadata.offset;
-
-          final functionFirstLineInfo =
-              analysisResult.lineInfo.getLocation(functionOffset);
-
-          final report = UtilitySelector.functionMetricsReport(functionReport);
-          final violationLevel =
-              UtilitySelector.functionMetricViolationLevel(report);
-
-          if (isReportLevel(violationLevel) && filePath != null) {
-            final startSourceLocation = SourceLocation(
-              functionOffset,
-              sourceUrl: Uri.file(filePath),
-              line: functionFirstLineInfo.lineNumber,
-              column: functionFirstLineInfo.columnNumber,
-            );
-
-            if (isReportLevel(report.cyclomaticComplexity.level)) {
-              result.add(metricReportToAnalysisErrorFixes(
-                startSourceLocation,
-                functionReport.declaration.end - startSourceLocation.offset,
-                report.cyclomaticComplexity.comment,
-                _codeMetricsId,
-              ));
-            }
-
-            if (isReportLevel(report.maximumNestingLevel.level)) {
-              result.add(metricReportToAnalysisErrorFixes(
-                startSourceLocation,
-                functionReport.declaration.end - startSourceLocation.offset,
-                report.maximumNestingLevel.comment,
-                _codeMetricsId,
-              ));
-            }
-          }
-        });
+          ...report.issues,
+          ...report.antiPatternCases,
+        ].map((issue) => codeIssueToAnalysisErrorFixes(issue, analysisResult)));
       }
 
       // Temporary disable deprecation check
@@ -282,20 +233,24 @@ class MetricsAnalyzerPlugin extends ServerPlugin {
     return result;
   }
 
-  LintConfig? _createConfig(AnalysisDriver driver, String rootPath) {
+  LintAnalysisConfig? _createConfig(AnalysisDriver driver, String rootPath) {
     final file = driver.analysisContext?.contextRoot.optionsFile;
     if (file != null && file.exists) {
-      final options = AnalysisOptions(yamlMapToDartMap(
-        AnalysisOptionsProvider(driver.sourceFactory).getOptionsFromFile(file),
-      ));
-      final config = ConfigBuilder.getConfig(options);
-      final lintConfig = ConfigBuilder.getLintConfig(
+      final options = AnalysisOptions(
+        file.path,
+        yamlMapToDartMap(
+          AnalysisOptionsProvider(driver.sourceFactory)
+              .getOptionsFromFile(file),
+        ),
+      );
+      final config = ConfigBuilder.getLintConfigFromOptions(options);
+      final lintConfig = ConfigBuilder.getLintAnalysisConfig(
         config,
-        rootPath,
+        options.folderPath ?? rootPath,
         classMetrics: const [],
         functionMetrics: [
-          CyclomaticComplexityMetric(config: config.metrics),
           NumberOfParametersMetric(config: config.metrics),
+          SourceLinesOfCodeMetric(config: config.metrics),
         ],
       );
 
