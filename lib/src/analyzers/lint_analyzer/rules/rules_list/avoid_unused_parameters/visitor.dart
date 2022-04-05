@@ -1,4 +1,4 @@
-part of 'avoid_unused_parameters.dart';
+part of 'avoid_unused_parameters_rule.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _unusedParameters = <FormalParameter>[];
@@ -13,6 +13,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
     final parameters = node.parameters;
 
     if (parent is ClassDeclaration && parent.isAbstract ||
+        node.isAbstract ||
         node.externalKeyword != null ||
         (parameters == null || parameters.parameters.isEmpty)) {
       return;
@@ -54,7 +55,7 @@ class _Visitor extends RecursiveAstVisitor<void> {
 
   Iterable<FormalParameter> _getUnusedParameters(
     Iterable<SyntacticEntity> children,
-    NodeList<FormalParameter> parameters,
+    Iterable<FormalParameter> parameters,
   ) {
     final result = <FormalParameter>[];
 

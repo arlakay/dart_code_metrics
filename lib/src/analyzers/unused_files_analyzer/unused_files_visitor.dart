@@ -1,5 +1,9 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+
+import '../../utils/node_utils.dart';
 
 class UnusedFilesVisitor extends GeneralizingAstVisitor<void> {
   final String _currentFilePath;
@@ -35,7 +39,7 @@ class UnusedFilesVisitor extends GeneralizingAstVisitor<void> {
 
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
-    if (node.name.name == 'main') {
+    if (isEntrypoint(node.name.name, node.metadata)) {
       _paths.add(_currentFilePath);
     }
   }

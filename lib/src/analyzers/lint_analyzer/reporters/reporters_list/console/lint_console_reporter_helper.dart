@@ -1,89 +1,103 @@
 import 'package:ansicolor/ansicolor.dart';
-import 'package:source_span/source_span.dart';
 
 import '../../../metrics/models/metric_value.dart';
 import '../../../metrics/models/metric_value_level.dart';
 import '../../../models/issue.dart';
 import '../../../models/severity.dart';
 
+final _alarmPen = AnsiPen()..rgb(r: 0.88, g: 0.32, b: 0.36);
+final _warnigPen = AnsiPen()..rgb(r: 0.98, g: 0.68, b: 0.4);
+final _bluePen = AnsiPen()..rgb(r: 0.08, g: 0.11, b: 0.81);
+final _whitePen = AnsiPen()..white();
+
+final _linkPen = AnsiPen()..rgb(r: 0.0, g: 0.78, b: 1.0);
+
+/// Helper for building lint console reports
 class LintConsoleReporterHelper {
   static final _colorPens = {
-    MetricValueLevel.alarm: AnsiPen()..red(),
-    MetricValueLevel.warning: AnsiPen()..yellow(),
-    MetricValueLevel.noted: AnsiPen()..blue(),
-    MetricValueLevel.none: AnsiPen()..white(),
+    MetricValueLevel.alarm: _alarmPen,
+    MetricValueLevel.warning: _warnigPen,
+    MetricValueLevel.noted: _bluePen,
+    MetricValueLevel.none: _whitePen,
   };
 
-  static const _humanReadableLabel = {
-    MetricValueLevel.alarm: 'ALARM',
-    MetricValueLevel.warning: 'WARNING',
-    MetricValueLevel.noted: 'NOTED',
-    MetricValueLevel.none: '',
+  final _severityPens = {
+    Severity.error: _alarmPen,
+    Severity.warning: _warnigPen,
+    Severity.performance: _bluePen,
+    Severity.style: _bluePen,
+    Severity.none: _whitePen,
   };
 
-  static final _severityColors = {
-    Severity.error: AnsiPen()..red(),
-    Severity.warning: AnsiPen()..yellow(),
-    Severity.style: AnsiPen()..blue(),
-  };
+  /// Converts an [issue] to the issue message string.
+  Iterable<String> getIssueMessage(Issue issue, String relativePath) {
+    final severity = _getSeverity(issue.severity);
+    final location = _linkPen(
+      '$relativePath:${issue.location.start.line}:${issue.location.start.column}',
+    );
+    final tabulation = _normalize('');
 
-  static final _designIssuesColor = AnsiPen()..yellow();
-  static const _designIssues = 'Design';
-
-  String getIssueMessage(Issue issue, String severity) {
-    final position = _getPosition(issue.location);
-    final rule = [issue.ruleId, issue.documentation].join(' ');
-
-    return '$severity${[issue.message, position, rule].join(' : ')}';
+    return [
+      '$severity${issue.message}',
+      '$tabulation$location',
+      '$tabulation${issue.ruleId} : ${issue.documentation}',
+      '',
+    ];
   }
 
-  String getSeverity(Severity severity) {
-    final color = _severityColors[severity];
-
-    if (color != null) {
-      final leftSide = severity.toString().substring(0, 1).toUpperCase();
-      final rightSide = severity.toString().substring(1);
-
-      return color(_normalize(leftSide + rightSide));
-    }
-
-    throw StateError('Unexpected severity.');
-  }
-
-  String getSeverityForAntiPattern() =>
-      _designIssuesColor(_normalize(_designIssues));
-
-  String getMetricReport(MetricValue<num> metric, String humanReadableName) {
-    final color = _colorPens[metric.level];
-
-    if (color != null) {
-      final value = metric.value.toInt();
-
-      return '$humanReadableName: ${color('$value')}';
-    }
-
-    throw StateError('Unexpected violation level.');
-  }
-
-  String getMetricMessage(
+  /// Creates a message for [violations] based on given [violationLevel].
+  Iterable<String> getMetricMessage(
     MetricValueLevel violationLevel,
     String source,
     Iterable<String> violations,
   ) {
+    if (violations.isEmpty) {
+      return [];
+    }
+
     final color = _colorPens[violationLevel];
-    final label = _humanReadableLabel[violationLevel];
+    if (color != null) {
+      final normalizedLabel =
+          color(_normalize(violationLevel.toString().toUpperCase()));
 
-    if (color != null && label != null) {
-      final normalizedLabel = _normalize(label);
+      final firstLine = source.isNotEmpty ? source : violations.first;
+      final records = source.isNotEmpty ? violations : violations.skip(1);
+      final tabulation = _normalize('');
 
-      return '${color(normalizedLabel)}$source - ${violations.join(', ')}';
+      return [
+        '$normalizedLabel$firstLine',
+        for (final record in records) '$tabulation$record',
+        '',
+      ];
     }
 
     throw StateError('Unexpected violation level.');
   }
 
-  String _getPosition(SourceSpan location) =>
-      '${location.start.line}:${location.start.column}';
+  /// Converts a [metric] to the metric message string.
+  String getMetricReport(MetricValue<num> metric) {
+    final color = _colorPens[metric.level];
+
+    if (color != null) {
+      final value = '${metric.value.toInt()} ${metric.unitType ?? ''}'.trim();
+
+      return '${metric.documentation.name.toLowerCase()}: ${color(value)}';
+    }
+
+    throw StateError('Unexpected violation level.');
+  }
+
+  String _getSeverity(Severity severity) {
+    final color = _severityPens[severity];
+
+    if (color != null) {
+      return color(_normalize(
+        severity != Severity.none ? severity.toString().toUpperCase() : '',
+      ));
+    }
+
+    throw StateError('Unexpected severity.');
+  }
 
   String _normalize(String s) => s.padRight(8);
 }

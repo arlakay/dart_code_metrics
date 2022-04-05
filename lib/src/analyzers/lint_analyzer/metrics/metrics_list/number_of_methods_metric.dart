@@ -10,14 +10,14 @@ import '../metric_utils.dart';
 import '../models/class_metric.dart';
 import '../models/metric_computation_result.dart';
 import '../models/metric_documentation.dart';
+import '../models/metric_value.dart';
 import '../scope_utils.dart';
 
 const _documentation = MetricDocumentation(
   name: 'Number of Methods',
   shortName: 'NOM',
-  brief: 'The number of methods of a class.',
   measuredType: EntityType.classEntity,
-  examples: [],
+  recomendedThreshold: 10,
 );
 
 /// Number of Methods (NOM)
@@ -31,16 +31,17 @@ class NumberOfMethodsMetric extends ClassMetric<int> {
       : super(
           id: metricId,
           documentation: _documentation,
-          threshold: readThreshold<int>(config, metricId, 10),
+          threshold: readNullableThreshold<int>(config, metricId),
           levelComputer: valueLevel,
         );
 
   @override
   MetricComputationResult<int> computeImplementation(
-    Declaration node,
+    AstNode node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
+    Iterable<MetricValue<num>> otherMetricsValues,
   ) {
     final methods = classMethods(node, functionDeclarations);
 
@@ -51,9 +52,9 @@ class NumberOfMethodsMetric extends ClassMetric<int> {
   }
 
   @override
-  String commentMessage(String nodeType, int value, int threshold) {
+  String commentMessage(String nodeType, int value, int? threshold) {
     final methods = '$value ${value == 1 ? 'method' : 'methods'}';
-    final exceeds = value > threshold
+    final exceeds = threshold != null && value > threshold
         ? ', which exceeds the maximum of $threshold allowed'
         : '';
 
@@ -61,8 +62,8 @@ class NumberOfMethodsMetric extends ClassMetric<int> {
   }
 
   @override
-  String? recommendationMessage(String nodeType, int value, int threshold) =>
-      (value > threshold)
+  String? recommendationMessage(String nodeType, int value, int? threshold) =>
+      (threshold != null && value > threshold)
           ? 'Consider breaking this $nodeType up into smaller parts.'
           : null;
 
@@ -76,4 +77,7 @@ class NumberOfMethodsMetric extends ClassMetric<int> {
                 location: nodeLocation(node: func.declaration, source: source),
               ))
           .toList(growable: false);
+
+  @override
+  String? unitType(int value) => value == 1 ? 'method' : 'methods';
 }

@@ -8,7 +8,8 @@ import 'file_report.dart';
 import 'reporter.dart';
 
 /// HTML-doc reporter
-abstract class HtmlReporter<T extends FileReport> extends Reporter<T> {
+abstract class HtmlReporter<T extends FileReport, S, P>
+    extends Reporter<T, S, P> {
   static const String id = 'html';
 
   @protected
@@ -18,7 +19,11 @@ abstract class HtmlReporter<T extends FileReport> extends Reporter<T> {
 
   @mustCallSuper
   @override
-  Future<void> report(Iterable<T> records) async {
+  Future<void> report(
+    Iterable<T> records, {
+    Iterable<S> summary = const [],
+    P? additionalParams,
+  }) async {
     if (records.isEmpty) {
       return;
     }
@@ -27,6 +32,8 @@ abstract class HtmlReporter<T extends FileReport> extends Reporter<T> {
     await copyResources();
   }
 
+  /// Creates a report directory.
+  /// If the directory already exists, it'll be deleted first.
   void createReportDirectory() {
     final reportDirectory = Directory(reportFolder);
     if (reportDirectory.existsSync()) {
@@ -35,6 +42,7 @@ abstract class HtmlReporter<T extends FileReport> extends Reporter<T> {
     reportDirectory.createSync(recursive: true);
   }
 
+  /// Copies resources for styling the HTML report.
   Future<void> copyResources() async {
     const resources = [
       'package:dart_code_metrics/src/reporters/resources/variables.css',

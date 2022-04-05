@@ -3,7 +3,6 @@ import 'package:source_span/source_span.dart';
 
 import '../models/issue.dart';
 import '../models/scoped_function_declaration.dart';
-import '../models/severity.dart';
 import 'models/pattern.dart';
 
 Issue createIssue({
@@ -16,7 +15,7 @@ Issue createIssue({
       ruleId: pattern.id,
       documentation: documentation(pattern),
       location: location,
-      severity: Severity.none,
+      severity: pattern.severity,
       message: message,
       verboseMessage: verboseMessage,
     );
@@ -24,15 +23,11 @@ Issue createIssue({
 /// Returns a url of a page containing documentation associated with [pattern]
 Uri documentation(Pattern pattern) => Uri(
       scheme: 'https',
-      host: 'github.com',
+      host: 'dartcodemetrics.dev',
       pathSegments: [
-        'dart-code-checker',
-        'dart-code-metrics',
-        'blob',
-        'master',
-        'doc',
+        'docs',
         'anti-patterns',
-        '${pattern.id}.md',
+        pattern.id,
       ],
     );
 

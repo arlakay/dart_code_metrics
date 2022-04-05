@@ -10,8 +10,6 @@ import 'package:dart_code_metrics/src/analyzers/lint_analyzer/metrics/models/met
 import 'package:dart_code_metrics/src/analyzers/lint_analyzer/metrics/models/metric_value_level.dart';
 import 'package:dart_code_metrics/src/analyzers/lint_analyzer/models/entity_type.dart';
 import 'package:dart_code_metrics/src/analyzers/lint_analyzer/models/report.dart';
-import 'package:dart_code_metrics/src/analyzers/lint_analyzer/reporters/models/class_metrics_report.dart';
-import 'package:dart_code_metrics/src/analyzers/lint_analyzer/reporters/models/function_metrics_report.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:source_span/source_span.dart';
 
@@ -20,6 +18,7 @@ class _DeclarationMock extends Mock implements Declaration {}
 MetricValue<T> buildMetricValueStub<T>({
   required String id,
   required T value,
+  String? unitType,
   EntityType type = EntityType.methodEntity,
   MetricValueLevel level = MetricValueLevel.none,
 }) =>
@@ -28,16 +27,16 @@ MetricValue<T> buildMetricValueStub<T>({
       documentation: MetricDocumentation(
         name: id,
         shortName: id.toUpperCase(),
-        brief: 'brief $id',
         measuredType: type,
-        examples: const [],
+        recomendedThreshold: 0,
       ),
       value: value,
+      unitType: unitType,
       level: level,
       comment: '',
     );
 
-Report buildRecordStub({
+Report buildReportStub({
   SourceSpanBase? location,
   Iterable<MetricValue<num>> metrics = const [],
 }) {
@@ -47,9 +46,8 @@ Report buildRecordStub({
       documentation: MetricDocumentation(
         name: 'metric1',
         shortName: 'MTR1',
-        brief: '',
         measuredType: EntityType.classEntity,
-        examples: [],
+        recomendedThreshold: 0,
       ),
       value: 0,
       level: MetricValueLevel.none,
@@ -60,9 +58,8 @@ Report buildRecordStub({
       documentation: MetricDocumentation(
         name: 'metric2',
         shortName: 'MTR2',
-        brief: '',
         measuredType: EntityType.methodEntity,
-        examples: [],
+        recomendedThreshold: 0,
       ),
       value: 1,
       level: MetricValueLevel.none,
@@ -90,7 +87,7 @@ Report buildFunctionRecordStub({
     buildMetricValueStub<int>(id: MaximumNestingLevelMetric.metricId, value: 0),
     buildMetricValueStub<int>(id: NumberOfParametersMetric.metricId, value: 0),
     buildMetricValueStub<int>(id: SourceLinesOfCodeMetric.metricId, value: 0),
-    buildMetricValueStub<double>(id: 'maintainability-index', value: 100),
+    buildMetricValueStub<int>(id: 'maintainability-index', value: 100),
   ];
 
   return Report(
@@ -100,118 +97,3 @@ Report buildFunctionRecordStub({
     metrics: [...metrics, ...defaultMetricValues],
   );
 }
-
-ClassMetricsReport buildClassMetricsReportStub({
-  int methodsCount = 0,
-  MetricValueLevel methodsCountViolationLevel = MetricValueLevel.none,
-  double weightOfClass = 1,
-  MetricValueLevel weightOfClassViolationLevel = MetricValueLevel.none,
-}) =>
-    ClassMetricsReport(
-      methodsCount: MetricValue<int>(
-        metricsId: '',
-        documentation: const MetricDocumentation(
-          name: 'metric1',
-          shortName: 'MTR1',
-          brief: '',
-          measuredType: EntityType.classEntity,
-          examples: [],
-        ),
-        value: methodsCount,
-        level: methodsCountViolationLevel,
-        comment: '',
-      ),
-      weightOfClass: MetricValue<double>(
-        metricsId: '',
-        documentation: const MetricDocumentation(
-          name: 'metric2',
-          shortName: 'MTR2',
-          brief: '',
-          measuredType: EntityType.classEntity,
-          examples: [],
-        ),
-        value: weightOfClass,
-        level: weightOfClassViolationLevel,
-        comment: '',
-      ),
-    );
-
-FunctionMetricsReport buildFunctionMetricsReportStub({
-  int cyclomaticComplexity = 0,
-  MetricValueLevel cyclomaticComplexityViolationLevel = MetricValueLevel.none,
-  int sourceLinesOfCode = 0,
-  MetricValueLevel sourceLinesOfCodeViolationLevel = MetricValueLevel.none,
-  double maintainabilityIndex = 0,
-  MetricValueLevel maintainabilityIndexViolationLevel = MetricValueLevel.none,
-  int argumentsCount = 0,
-  MetricValueLevel argumentsCountViolationLevel = MetricValueLevel.none,
-  int maximumNestingLevel = 0,
-  MetricValueLevel maximumNestingLevelViolationLevel = MetricValueLevel.none,
-}) =>
-    FunctionMetricsReport(
-      cyclomaticComplexity: MetricValue<int>(
-        metricsId: '',
-        documentation: const MetricDocumentation(
-          name: '',
-          shortName: '',
-          brief: '',
-          measuredType: EntityType.classEntity,
-          examples: [],
-        ),
-        value: cyclomaticComplexity,
-        level: cyclomaticComplexityViolationLevel,
-        comment: '',
-      ),
-      sourceLinesOfCode: MetricValue<int>(
-        metricsId: '',
-        documentation: const MetricDocumentation(
-          name: '',
-          shortName: '',
-          brief: '',
-          measuredType: EntityType.classEntity,
-          examples: [],
-        ),
-        value: sourceLinesOfCode,
-        level: sourceLinesOfCodeViolationLevel,
-        comment: '',
-      ),
-      maintainabilityIndex: MetricValue<double>(
-        metricsId: '',
-        documentation: const MetricDocumentation(
-          name: '',
-          shortName: '',
-          brief: '',
-          measuredType: EntityType.classEntity,
-          examples: [],
-        ),
-        value: maintainabilityIndex,
-        level: maintainabilityIndexViolationLevel,
-        comment: '',
-      ),
-      argumentsCount: MetricValue<int>(
-        metricsId: '',
-        documentation: const MetricDocumentation(
-          name: '',
-          shortName: '',
-          brief: '',
-          measuredType: EntityType.classEntity,
-          examples: [],
-        ),
-        value: argumentsCount,
-        level: argumentsCountViolationLevel,
-        comment: '',
-      ),
-      maximumNestingLevel: MetricValue<int>(
-        metricsId: '',
-        documentation: const MetricDocumentation(
-          name: '',
-          shortName: '',
-          brief: '',
-          measuredType: EntityType.classEntity,
-          examples: [],
-        ),
-        value: maximumNestingLevel,
-        level: maximumNestingLevelViolationLevel,
-        comment: '',
-      ),
-    );

@@ -21,39 +21,42 @@ abstract class Metric<T extends num> {
 
   /// The threshold value divides the space of a metric value into regions. The
   /// end user is informed about the measured entity based on the value region.
-  final T threshold;
+  final T? threshold;
 
-  final MetricValueLevel Function(T, T) _levelComputer;
+  final MetricValueLevel Function(T, T?) _levelComputer;
 
   /// Initialize a newly created [Metric].
   const Metric({
     required this.id,
     required this.documentation,
     required this.threshold,
-    required MetricValueLevel Function(T, T) levelComputer,
+    required MetricValueLevel Function(T, T?) levelComputer,
   }) : _levelComputer = levelComputer;
 
   /// Returns true if the metric can be computed on this [node].
   bool supports(
-    Declaration node,
+    AstNode node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
+    Iterable<MetricValue<Object>> otherMetricsValues,
   ) =>
       true;
 
   /// Returns the computed [MetricValue] for the given [node].
   MetricValue<T> compute(
-    Declaration node,
+    AstNode node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
+    Iterable<MetricValue<num>> otherMetricsValues,
   ) {
     final result = computeImplementation(
       node,
       classDeclarations,
       functionDeclarations,
       source,
+      otherMetricsValues,
     );
 
     final type = nodeType(node, classDeclarations, functionDeclarations) ?? '';
@@ -62,6 +65,7 @@ abstract class Metric<T extends num> {
       metricsId: id,
       documentation: documentation,
       value: result.value,
+      unitType: unitType(result.value),
       level: _levelComputer(result.value, threshold),
       comment: commentMessage(type, result.value, threshold),
       recommendation: recommendationMessage(type, result.value, threshold),
@@ -72,26 +76,31 @@ abstract class Metric<T extends num> {
   /// Returns the internal metric model [MetricComputationResult] for the given [node].
   @protected
   MetricComputationResult<T> computeImplementation(
-    Declaration node,
+    AstNode node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
     InternalResolvedUnitResult source,
+    Iterable<MetricValue<num>> otherMetricsValues,
   );
 
   /// Returns the message for the user containing information about the computed value.
   @protected
-  String commentMessage(String nodeType, T value, T threshold);
+  String commentMessage(String nodeType, T value, T? threshold);
 
   /// Returns the message for a user containing information about how the user
   /// can improve this value.
   @protected
-  String? recommendationMessage(String nodeType, T value, T threshold) => null;
+  String? recommendationMessage(String nodeType, T value, T? threshold) => null;
 
   /// Returns human readable type of [node]
   @protected
   String? nodeType(
-    Declaration node,
+    AstNode node,
     Iterable<ScopedClassDeclaration> classDeclarations,
     Iterable<ScopedFunctionDeclaration> functionDeclarations,
   );
+
+  /// Returns the human readable unit type.
+  @protected
+  String? unitType(T value) => null;
 }

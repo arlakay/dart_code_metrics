@@ -1,4 +1,4 @@
-part of 'member_ordering.dart';
+part of 'member_ordering_rule.dart';
 
 class _Visitor extends RecursiveAstVisitor<List<_MemberInfo>> {
   final List<_MembersGroup> _groupsOrder;
@@ -149,7 +149,6 @@ class _Visitor extends RecursiveAstVisitor<List<_MemberInfo>> {
       _groupsOrder.indexOf(lastMemberGroup) > _groupsOrder.indexOf(memberGroup);
 }
 
-@immutable
 class _MembersGroup {
   final String name;
 
@@ -197,7 +196,6 @@ class _MembersGroup {
       _groupsOrder.firstWhereOrNull((group) => group.name == name);
 }
 
-@immutable
 class _Annotation {
   final String name;
   final _MembersGroup group;
@@ -234,7 +232,6 @@ class _Annotation {
       _annotations.firstWhereOrNull((annotation) => annotation.name == name);
 }
 
-@immutable
 class _MemberInfo {
   final ClassMember classMember;
   final _MemberOrder memberOrder;
@@ -245,7 +242,6 @@ class _MemberInfo {
   });
 }
 
-@immutable
 class _MemberOrder {
   final bool isWrong;
   final bool isAlphabeticallyWrong;
@@ -262,7 +258,6 @@ class _MemberOrder {
   });
 }
 
-@immutable
 class _MemberNames {
   final String currentName;
   final String? previousName;

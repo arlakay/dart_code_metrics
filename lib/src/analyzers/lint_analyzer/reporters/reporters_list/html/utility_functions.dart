@@ -1,19 +1,33 @@
 import 'package:html/dom.dart';
 
-import '../../../metrics/models/metric_value.dart';
-import 'lint_html_reporter.dart';
+import '../../../models/report.dart';
+import 'components/icon.dart';
+import 'components/report_details_tooltip.dart';
+import 'models/icon_type.dart';
+import 'models/report_table_record.dart';
 
 const _violations = 'violations';
+
+Element renderComplexityIcon(Report entityReport, String entityType) =>
+    Element.tag('div')
+      ..classes.addAll([
+        'metrics-source-code__icon',
+        'metrics-source-code__icon--complexity',
+      ])
+      ..append(renderIcon(IconType.complexity))
+      ..append(renderDetailsTooltip(entityReport, entityType));
 
 Element renderSummaryMetric(
   String name,
   int metricValue, {
+  String? unitType,
   int violations = 0,
   bool forceViolations = false,
 }) {
   final withViolation = violations > 0;
+  final value = '$metricValue ${unitType ?? ''}'.trim();
   final title = withViolation ? '$name / $_violations' : name;
-  final value = withViolation ? '$metricValue / $violations' : '$metricValue';
+  final fullValue = withViolation ? '$value / $violations' : value;
 
   return Element.tag('div')
     ..classes.addAll([
@@ -25,32 +39,7 @@ Element renderSummaryMetric(
       ..text = '$title : ')
     ..append(Element.tag('span')
       ..classes.add('metrics-total__count')
-      ..text = value);
-}
-
-Element renderFunctionMetric(String name, MetricValue<num> metric) {
-  final metricName = name.toLowerCase();
-  final violationLevel = metric.level.toString();
-
-  return Element.tag('div')
-    ..classes.add('metrics-source-code__tooltip-section')
-    ..append(Element.tag('p')
-      ..classes.add('metrics-source-code__tooltip-text')
-      ..append(Element.tag('span')
-        ..classes.add('metrics-source-code__tooltip-label')
-        ..text = '$metricName:&nbsp;')
-      ..append(Element.tag('span')..text = metric.value.round().toString()))
-    ..append(Element.tag('p')
-      ..classes.add('metrics-source-code__tooltip-text')
-      ..append(Element.tag('span')
-        ..classes.add('metrics-source-code__tooltip-label')
-        ..text = '$metricName violation level:&nbsp;')
-      ..append(Element.tag('span')
-        ..classes.addAll([
-          'metrics-source-code__tooltip-level',
-          'metrics-source-code__tooltip-level--$violationLevel',
-        ])
-        ..text = violationLevel));
+      ..text = fullValue);
 }
 
 Element renderTableRecord(ReportTableRecord record) {
@@ -64,6 +53,8 @@ Element renderTableRecord(ReportTableRecord record) {
       record.report.argumentsCountViolations > 0;
   final recordHaveMaximumNestingLevelViolations =
       record.report.maximumNestingLevelViolations > 0;
+  final recordHaveTechDebtViolations =
+      record.report.technicalDebtViolations > 0;
 
   return Element.tag('tr')
     ..append(Element.tag('td')
@@ -103,5 +94,10 @@ Element renderTableRecord(ReportTableRecord record) {
           : '${record.report.averageMaximumNestingLevel}'
       ..classes.add(
         recordHaveMaximumNestingLevelViolations ? 'with-violations' : '',
+      ))
+    ..append(Element.tag('td')
+      ..text = '${record.report.technicalDebt}'
+      ..classes.add(
+        recordHaveTechDebtViolations ? 'with-violations' : '',
       ));
 }

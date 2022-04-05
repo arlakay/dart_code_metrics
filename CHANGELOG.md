@@ -1,5 +1,180 @@
 # Changelog
 
+## 4.10.1
+
+* fix: restore `analyze` command as default command.
+
+## 4.10.0
+
+* feat: add `check-unused-code` command with monorepos support.
+* feat: support excludes for a separate anti-pattern.
+* feat: improve `check-unused-l10n` command, ignore private members and cover supertype member calls.
+* feat: add new command flag `--no-congratulate`.
+* feat: add `--version` flag to print current version of the package.
+* feat: support Flutter internal entry functions for `check-unused-files` and `check-unused-code`.
+* fix: cyclomatic complexity calculation for functions with internal lambdas.
+* fix: ignore private variables in `avoid-global-state` rule.
+* chore: restrict `analyzer` version to `>=2.4.0 <3.3.0`.
+
+## 4.10.0-dev.2
+
+* fix: support excludes and conditional imports for `check-unused-code` command.
+
+## 4.10.0-dev.1
+
+* feat: add check unused code command.
+* feat: support excludes for a separate anti-pattern.
+* feat: ignore private members for `check-unused-l10n` command.
+* fix: ignore private variables in `avoid-global-state` rule.
+* chore: restrict `analyzer` version to `>=2.4.0 <3.2.0`.
+
+## 4.9.1
+
+* fix: `avoid-global-state` to support static fields.
+* fix: `prefer-extracting-callbacks` in nested widgets.
+* fix: correctly handle method invocations on getters and method of for `check-unused-l10n` command.
+
+## 4.9.0
+
+* feat: add static code diagnostics `avoid-global-state`, `avoid-unrelated-type-assertions`.
+* feat: support extensions and static getters for `check-unused-l10n`.
+* feat: improve `prefer-correct-type-name`, `prefer-match-file-name` rules.
+* feat: add `delete-files` flag to `check-unused-files` command.
+* feat: facelift console reporters.
+* chore: restrict `analyzer` version to `>=2.4.0 <3.1.0`.
+* chore: restrict `analyzer_plugin` version to `>=0.8.0 <0.10.0`.
+
+## 4.8.1
+
+* feat: add cli options for fatal exit if unused files or l10n are found.
+
+## 4.8.0
+
+* feat: add alphabetical sorting by type for `member-ordering-extended` rule.
+* feat: add support mixins, extensions and enums for `prefer-match-file-name` rule.
+* feat: add `technical-debt` metric.
+* fix: `prefer-conditional-expressions` rule breaks code with increment / decrement operators.
+* chore: restrict `analyzer` version to `>=2.4.0 <2.9.0`.
+
+## 4.7.0
+
+* feat: add static code diagnostics `avoid-throw-in-catch-block`, `avoid-unnecessary-type-assertions`, `avoid-unnecessary-type-casts`, `avoid-missing-enum-constant-in-map`.
+* feat: improve check unused l10n.
+* fix: `no-magic-number` not working in array of widgets.
+* chore: activate self implemented rules: `avoid-unnecessary-type-assertions`, `avoid-unnecessary-type-casts`, `prefer-first`, `prefer-last`, `prefer-match-file-name`.
+* refactor: cleanup anti-patterns, metrics and rules documentation.
+
+## 4.6.0
+
+* feat: CLI now can be compiled to and used as compiled executable.
+
+## 4.5.0
+
+* feat: add static code diagnostics `avoid-nested-conditional-expressions`, `prefer-correct-identifier-length`, `prefer-correct-type-name`, `prefer-first`, `prefer-last`.
+* feat: introduce summary report.
+* fix: rule-specific excludes not working on Windows.
+* fix: make check-unused-l10n report class fields.
+* chore: changed min `SDK` version to `2.14.0`.
+* chore: changed the supported `analyzer_plugin` version to `^0.8.0`.
+* chore: deprecate documentation in Github repo.
+* chore: restrict `analyzer` version to `>=2.4.0 <2.8.0`.
+
+## 4.5.0-dev.3
+
+* fix: make check-unused-l10n report class fields.
+* chore: restrict `analyzer` version to `>=2.4.0 <2.8.0`.
+
+## 4.5.0-dev.2
+
+* feat: add static code diagnostics `prefer-correct-type-name`, `prefer-last`, `avoid-nested-conditional-expressions`.
+* feat: introduce summary report.
+* chore: deprecate documentation in Github repo.
+* chore: restrict `analyzer` version to `>=2.4.0 <2.7.0`.
+
+## 4.5.0-dev.1
+
+* chore: changed min `SDK` version to `2.14.0`.
+* chore: restrict `analyzer` version to `>=2.4.0 <2.6.0`.
+* chore: changed the supported `analyzer_plugin` version to `^0.8.0`.
+* feat: add static code diagnostic `prefer-correct-identifier-length`, `prefer-first`.
+
+## 4.4.0
+
+* feat: introduce `check-unused-l10n` command.
+* feat: add static code diagnostic `prefer-const-border-radius`.
+* feat: improve static code diagnostic `prefer-extracting-callbacks`: don't trigger on empty function blocks and ignore Flutter builder functions.
+* feat: improve unused files check, add support for `vm:entry-point` annotation.
+* fix: compute `Number of Parameters` only for functions and methods.
+* fix: `Number of Parameters` skip copyWith methods.
+* fix: skip synthetic tokens while compute `Source lines of Code`.
+* fix: update `Maintainability Index` metric comment message.
+
+## 4.3.3
+
+* Fix unhandled exception while parsing `analysis_options.yaml`
+
+## 4.3.2
+
+* Restrict analyzer version to '>=2.1.0 <2.4.0'
+
+## 4.3.1
+
+* Update .pubignore
+
+## 4.3.0
+
+* Add support for global rules-exclude.
+* Add `Halstead Volume` metric.
+* Add ability to configure anti-pattern severity.
+* Add `--fatal-warnings`, `--fatal-performance`, `--fatal-style` cli arguments.
+* Deprecated GitHub reporter.
+
+## 4.3.0-dev.1
+
+* Add support for global rules-exclude.
+* Add `Halstead Volume` metric.
+* Add ability to configure anti-pattern severity.
+* Add `--fatal-warnings`, `--fatal-performance`, `--fatal-style` cli arguments.
+
+## 4.2.1
+
+* Fix rule and metrics excludes for monorepos.
+* Improve static code diagnostics `avoid-unused-parameters`, `prefer-match-file-name`.
+
+## 4.2.0
+
+* Add static code diagnostics `avoid-ignoring-return-values`, `prefer-match-file-name`, `prefer-single-widget-per-file`.
+* Changed the supported `analyzer` version to `^2.1.0`.
+* Changed the supported `analyzer_plugin` version to `^0.7.0`.
+* Improve cli performance.
+
+## 4.2.0-dev.3
+
+* Changed the supported `analyzer` version to `^2.1.0`.
+
+## 4.2.0-dev.2
+
+* Changed the supported `analyzer` version to `^2.0.0`.
+* Changed the supported `analyzer_plugin` version to `^0.7.0`.
+
+## 4.2.0-dev.1
+
+* Add static code diagnostics `prefer-match-file-name`, `prefer-single-widget-per-file`.
+
+## 4.1.0
+
+* Add better monorepos support for CLI
+* Add support merge analysis options with detail rule config.
+
+## 4.0.2-dev.1
+
+* Add support for analysis options auto discovery.
+
+## 4.0.1
+
+* Improve static code diagnostic `always-remove-listener`.
+* Disable metrics report for the plugin.
+
 ## 4.0.0
 
 * Add static code diagnostics `always-remove-listener`, `avoid-wrapping-in-padding`, `avoid-unnecessary-setstate` and `prefer-extracting-callbacks`.

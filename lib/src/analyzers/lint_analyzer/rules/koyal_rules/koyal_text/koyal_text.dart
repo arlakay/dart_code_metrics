@@ -1,18 +1,18 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
-import '../../../../../../lint_analyzer.dart';
 import '../../../../../utils/node_utils.dart';
+import '../../../lint_utils.dart';
 import '../../../models/internal_resolved_unit_result.dart';
 import '../../../models/issue.dart';
+import '../../../models/replacement.dart';
 import '../../../models/severity.dart';
-import '../../models/rule.dart';
-import '../../models/rule_documentation.dart';
+import '../../models/flutter_rule.dart';
 import '../../rule_utils.dart';
 
 part 'visitor.dart';
 
-class KoyalTextRule extends Rule {
+class KoyalTextRule extends FlutterRule {
   static const String ruleId = 'koyal-text';
 
   static const _failure = 'KoyalText should be used instead of Text.';
@@ -20,10 +20,6 @@ class KoyalTextRule extends Rule {
   KoyalTextRule([Map<String, Object> config = const {}])
       : super(
           id: ruleId,
-          documentation: const RuleDocumentation(
-            name: 'Koyal Text',
-            brief: 'Checks that there is no constructor of native Text.',
-          ),
           severity: readSeverity(config, Severity.error),
           excludes: readExcludes(config),
         );
