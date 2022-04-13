@@ -1,4 +1,4 @@
-part of 'no_native_icons.dart';
+part of 'no_native_icons_rule.dart';
 
 class _Visitor extends RecursiveAstVisitor<void> {
   final _expressions = <PrefixedIdentifier>[];
