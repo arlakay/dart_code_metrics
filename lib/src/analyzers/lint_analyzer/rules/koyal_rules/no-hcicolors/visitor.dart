@@ -10,11 +10,10 @@ class _Visitor extends RecursiveAstVisitor<void> {
   void visitPrefixedIdentifier(PrefixedIdentifier node) {
     super.visitPrefixedIdentifier(node);
     
-    print('no-hcicolors: ${node.prefix}');
     if (node.prefix.toSource() == _hciColors) {
-      // if (_isBuildContextAvailable(node)) {
-      //   _expressions.add(node);
-      // }
+      if (_isBuildContextAvailable(node)) {
+        _expressions.add(node);
+      }
       _expressions.add(node);
     }
   }
