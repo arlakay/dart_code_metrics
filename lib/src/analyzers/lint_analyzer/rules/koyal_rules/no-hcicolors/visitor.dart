@@ -14,7 +14,6 @@ class _Visitor extends RecursiveAstVisitor<void> {
       if (_isBuildContextAvailable(node)) {
         _expressions.add(node);
       }
-      _expressions.add(node);
     }
   }
 
