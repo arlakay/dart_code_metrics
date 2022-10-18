@@ -1,4 +1,5 @@
 import '../models/rule.dart';
+import 'api_imports_in_infrastructure_only/api_imports_in_infrastructure_only.dart';
 import 'buttons_layout/buttons_layout.dart';
 import 'koyal_scaffold/koyal_scaffold.dart';
 import 'koyal_text/koyal_text.dart';
@@ -16,11 +17,14 @@ final rules = <String, Rule Function(Map<String, Object>)>{
   KoyalTextRule.ruleId: (config) => KoyalTextRule(config),
   KoyalTextSpanRule.ruleId: (config) => KoyalTextSpanRule(config),
   NoNativeButtonsRule.ruleId: (config) => NoNativeButtonsRule(config),
-  NoCrossPackageExportsRule.ruleId: (config) => NoCrossPackageExportsRule(config),
+  NoCrossPackageExportsRule.ruleId: (config) =>
+      NoCrossPackageExportsRule(config),
   NoNativeIconsRule.ruleId: (config) => NoNativeIconsRule(config),
-  NoNativeInputElementsRule.ruleId: (config) => NoNativeInputElementsRule(config),
+  NoNativeInputElementsRule.ruleId: (config) =>
+      NoNativeInputElementsRule(config),
   ButtonsLayoutRule.ruleId: (config) => ButtonsLayoutRule(config),
   NoDirectColorsRule.ruleId: (config) => NoDirectColorsRule(config),
   NoDirectPaddingRule.ruleId: (config) => NoDirectPaddingRule(config),
   NoHciColorsRule.ruleId: (config) => NoHciColorsRule(config),
+  ApiImportsInInfrastructureOnly.ruleId: (config) => ApiImportsInInfrastructureOnly(config),
 };
